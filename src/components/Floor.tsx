@@ -9,6 +9,8 @@ interface Props {
   undeliveredIds: Set<string>
   height: number
   isActive: boolean
+  /** 电梯途经本层时的运转闪烁 */
+  isPassing?: boolean
 }
 
 export function FloorRow({
@@ -19,10 +21,17 @@ export function FloorRow({
   undeliveredIds,
   height,
   isActive,
+  isPassing = false,
 }: Props) {
   return (
     <div
-      className={`floor${isActive ? ' floor--active' : ''}`}
+      className={[
+        'floor',
+        isActive ? 'floor--active' : '',
+        isPassing ? 'floor--passing' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       style={{ height }}
       data-floor={floor}
     >
@@ -31,6 +40,7 @@ export function FloorRow({
       <div className="floor__label">
         <span className="floor__num">{floor}</span>
         <span className="floor__unit">F</span>
+        {isPassing && <span className="floor__pass-dot" aria-hidden />}
       </div>
 
       <div className="floor__hall">
@@ -59,7 +69,7 @@ export function FloorRow({
       </div>
 
       <div
-        className={`floor__doorway${isActive ? ' floor__doorway--open' : ''}`}
+        className={`floor__doorway${isActive ? ' floor__doorway--open' : ''}${isPassing ? ' floor__doorway--pass' : ''}`}
         aria-hidden
       >
         <div className="floor__portal">

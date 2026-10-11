@@ -63,6 +63,7 @@ export function Game() {
   }, [playback.mode, playback.result?.success, level.id, markCleared])
 
   const editing = playback.mode === 'idle'
+  const isRunning = playback.mode === 'playing'
 
   const slotHighlight =
     playback.mode === 'finished' && playback.result?.success
@@ -71,37 +72,54 @@ export function Game() {
 
   return (
     <div className="game">
-      <header className="game__header">
-        <h1 className="game__title">电梯今天听你的</h1>
-        <LevelSelect
-          levels={LEVELS}
-          currentId={level.id}
-          isCleared={isCleared}
-          isUnlocked={isUnlocked}
-          onSelect={setLevelId}
+      <div className="game__scroll">
+        <header className="game__header">
+          <div className="game__title-row">
+            <h1 className="game__title">电梯今天听你的</h1>
+            <div className="game__level-meta">
+              <strong>
+                {level.id}. {level.name}
+              </strong>
+              <span>
+                容量 {level.capacity} · 停靠 ≤{level.maxStops}
+              </span>
+            </div>
+          </div>
+          <LevelSelect
+            levels={LEVELS}
+            currentId={level.id}
+            isCleared={isCleared}
+            isUnlocked={isUnlocked}
+            onSelect={setLevelId}
+          />
+          {editing && level.description && (
+            <p className="game__desc">{level.description}</p>
+          )}
+          <EventLog text={playback.currentStep?.event.description ?? ''} />
+        </header>
+
+        <Building
+          capacity={level.capacity}
+          startFloor={level.startFloor}
+          step={playback.currentStep}
+          initialWaiting={initialWaiting}
+          arrivalFlashIds={arrivalFlashIds}
+          undeliveredIds={undeliveredIds}
+          isRunning={isRunning}
         />
-        <div className="game__level-meta">
-          <strong>
-            第 {level.id} 关 · {level.name}
-          </strong>
-          <span>
-            容量 {level.capacity} · 最多停靠 {level.maxStops} 次
-          </span>
-        </div>
-        {level.description && <p className="game__desc">{level.description}</p>}
-        <EventLog text={playback.currentStep?.event.description ?? ''} />
-      </header>
 
-      <Building
-        capacity={level.capacity}
-        startFloor={level.startFloor}
-        step={playback.currentStep}
-        initialWaiting={initialWaiting}
-        arrivalFlashIds={arrivalFlashIds}
-        undeliveredIds={undeliveredIds}
-      />
+        {playback.mode === 'finished' && playback.result && (
+          <div className="game__result-inline">
+            <ResultPanel
+              success={playback.result.success}
+              failureInfo={playback.result.failureInfo}
+            />
+          </div>
+        )}
+      </div>
 
-      <section className="game__controls">
+      {/* 底部固定编排栏：无需滚动即可操作 */}
+      <section className="game__dock" aria-label="编排与播放">
         <CommandSlots
           maxStops={level.maxStops}
           commands={playback.commands}
@@ -170,13 +188,6 @@ export function Game() {
             </>
           )}
         </div>
-
-        {playback.mode === 'finished' && playback.result && (
-          <ResultPanel
-            success={playback.result.success}
-            failureInfo={playback.result.failureInfo}
-          />
-        )}
       </section>
     </div>
   )

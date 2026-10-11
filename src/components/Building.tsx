@@ -1,9 +1,12 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { TOTAL_FLOORS, type Passenger, type SimStep } from '../engine/types'
 import { Elevator } from './Elevator'
 import { FloorRow } from './Floor'
 
-const FLOOR_HEIGHT = 92
+/** 楼层略压缩，方便与底部固定栏同屏 */
+const FLOOR_HEIGHT = 68
+/** 电梯层间过渡总时长（与 CSS transition 对齐） */
+const TRANSIT_MS = 560
 
 interface Props {
   capacity: number
@@ -12,6 +15,19 @@ interface Props {
   initialWaiting: Map<number, Passenger[]>
   arrivalFlashIds: Set<string>
   undeliveredIds: Set<string>
+  /** 播放中：途经楼层逐层闪烁 */
+  isRunning?: boolean
+}
+
+function floorsBetween(from: number, to: number): number[] {
+  if (from === to) return [to]
+  const dir = to > from ? 1 : -1
+  const path: number[] = []
+  for (let f = from + dir; ; f += dir) {
+    path.push(f)
+    if (f === to) break
+  }
+  return path
 }
 
 export function Building({
@@ -21,6 +37,7 @@ export function Building({
   initialWaiting,
   arrivalFlashIds,
   undeliveredIds,
+  isRunning = false,
 }: Props) {
   const floor = step?.floor ?? startFloor
   const inElevator = step?.inElevator ?? []
@@ -33,35 +50,62 @@ export function Building({
     return list
   }, [])
 
+  const prevFloorRef = useRef(floor)
+  const [passingFloor, setPassingFloor] = useState<number | null>(null)
+  const [inTransit, setInTransit] = useState(false)
+
+  useEffect(() => {
+    const from = prevFloorRef.current
+    const to = floor
+    prevFloorRef.current = to
+
+    if (from === to) return
+
+    // 仅在自动播放时做途经闪烁；单步也给一次短闪
+    const path = floorsBetween(from, to)
+    const timers: number[] = []
+    setInTransit(true)
+
+    const slice = Math.max(80, Math.floor(TRANSIT_MS / path.length))
+    path.forEach((f, i) => {
+      timers.push(
+        window.setTimeout(() => {
+          setPassingFloor(f)
+        }, i * slice),
+      )
+    })
+
+    timers.push(
+      window.setTimeout(() => {
+        setPassingFloor(null)
+        setInTransit(false)
+      }, TRANSIT_MS),
+    )
+
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t))
+    }
+  }, [floor])
+
+  // 停止运行时清掉途经高亮
+  useEffect(() => {
+    if (!isRunning && !inTransit) {
+      setPassingFloor(null)
+    }
+  }, [isRunning, inTransit])
+
   return (
     <div className="building">
-      <div className="building__legend">
-        <span className="building__legend-item">
-          <i className="building__dot building__dot--wait" />
-          走廊排队
-        </span>
-        <span className="building__legend-item">
-          <i className="building__dot building__dot--cab" />
-          电梯内
-        </span>
-        <span className="building__legend-item">
-          <i className="building__dot building__dot--ok" />
-          已送达
-        </span>
-      </div>
-
       <div className="tower">
-        {/* 幕墙顶部金属压顶 */}
         <div className="tower__crown" aria-hidden>
           <div className="tower__crown-bar" />
           <div className="tower__crown-glass" />
         </div>
 
         <div
-          className="tower__facade"
+          className={`tower__facade${inTransit ? ' tower__facade--moving' : ''}`}
           style={{ height: TOTAL_FLOORS * FLOOR_HEIGHT }}
         >
-          {/* 玻璃反射层 */}
           <div className="tower__glare" aria-hidden />
           <div className="tower__mullions" aria-hidden />
 
@@ -75,7 +119,8 @@ export function Building({
                 arrived={arrived?.get(f) ?? []}
                 arrivalFlashIds={arrivalFlashIds}
                 undeliveredIds={undeliveredIds}
-                isActive={f === floor}
+                isActive={f === floor && !inTransit}
+                isPassing={passingFloor === f}
               />
             ))}
           </div>
@@ -93,12 +138,11 @@ export function Building({
               capacity={capacity}
               passengers={inElevator}
               floorHeight={FLOOR_HEIGHT}
-              doorsOpen
+              doorsOpen={!inTransit}
             />
           </div>
         </div>
 
-        {/* 裙楼石材基座 */}
         <div className="tower__plinth" aria-hidden>
           <span>LOBBY</span>
         </div>

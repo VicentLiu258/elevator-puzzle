@@ -1,53 +1,94 @@
 .game {
   max-width: 480px;
   margin: 0 auto;
-  padding: 14px 14px 32px;
+  height: 100dvh;
+  height: 100svh;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: 100dvh;
+  overflow: hidden;
 }
 
-.game__header {
+.game__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 12px 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+.game__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.game__title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .game__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.55rem;
+  font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--ink);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
 }
 
 .game__level-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 0.88rem;
+  align-items: flex-end;
+  gap: 0;
+  font-size: 0.72rem;
   color: var(--muted);
+  text-align: right;
+  line-height: 1.25;
 }
 
 .game__level-meta strong {
   color: var(--ink);
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   font-weight: 650;
 }
 
 .game__desc {
   margin: 0;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.65);
   border-radius: var(--radius);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   color: var(--muted);
   box-shadow: 0 4px 16px rgba(40, 60, 80, 0.06);
+}
+
+.game__result-inline {
+  flex-shrink: 0;
+}
+
+/* 底部固定编排栏 */
+.game__dock {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 -8px 28px rgba(40, 60, 80, 0.12);
+  z-index: 20;
 }
 
 /* 关卡选择 — 磨砂玻璃片 */
@@ -58,9 +99,9 @@
 }
 
 .level-chip {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.7);
   color: var(--ink);
@@ -86,13 +127,13 @@
 
 /* 事件条 — 深色钢铝显示屏 */
 .event-log {
-  min-height: 2.6em;
-  padding: 10px 14px;
+  min-height: 2.2em;
+  padding: 8px 12px;
   background: linear-gradient(180deg, #3a4550 0%, #2a323c 100%);
   border-radius: 10px;
   border: 1px solid #1a222a;
   color: #dce6ee;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 500;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
@@ -103,58 +144,26 @@
 .building {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.building__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--muted);
-  padding: 0 2px;
-}
-
-.building__legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.building__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4);
-}
-
-.building__dot--wait {
-  background: var(--office);
-}
-.building__dot--cab {
-  background: var(--accent);
-}
-.building__dot--ok {
-  background: var(--steel-dark);
+  gap: 0;
+  flex: 1;
+  min-height: 0;
 }
 
 .tower {
   position: relative;
   border-radius: 6px 6px 4px 4px;
-  filter: drop-shadow(0 18px 28px rgba(40, 60, 80, 0.28));
+  filter: drop-shadow(0 12px 22px rgba(40, 60, 80, 0.25));
 }
 
 /* 压顶 */
 .tower__crown {
   position: relative;
-  height: 18px;
+  height: 14px;
   z-index: 3;
 }
 
 .tower__crown-bar {
-  height: 8px;
+  height: 6px;
   background: linear-gradient(
     180deg,
     var(--steel-bright) 0%,
@@ -168,7 +177,7 @@
 }
 
 .tower__crown-glass {
-  height: 10px;
+  height: 8px;
   background: linear-gradient(
     180deg,
     rgba(200, 225, 240, 0.55) 0%,
@@ -313,7 +322,7 @@
 
 /* 石材基座 */
 .tower__plinth {
-  height: 22px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -379,6 +388,58 @@
   z-index: 5;
 }
 
+/* 电梯途经：逐层闪烁 */
+.floor--passing {
+  background: rgba(255, 210, 140, 0.42);
+  animation: floor-pass-flash 0.18s ease;
+}
+
+.floor--passing .floor__label {
+  color: #fff8f0;
+  background: linear-gradient(180deg, #e09a50 0%, #c4783b 100%);
+}
+
+.floor--passing .floor__hall {
+  box-shadow: inset 0 0 24px rgba(240, 180, 100, 0.35);
+}
+
+.floor__pass-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 2px;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255, 220, 160, 0.9);
+}
+
+.floor__doorway--pass .floor__portal {
+  border-color: rgba(240, 180, 100, 0.7);
+  background: linear-gradient(90deg, rgba(224, 154, 80, 0.55), rgba(40, 50, 60, 0.25));
+  box-shadow: inset -4px 0 12px rgba(240, 180, 100, 0.35);
+}
+
+.tower__facade--moving .tower__shaft-cables {
+  animation: cable-run 0.35s linear infinite;
+}
+
+@keyframes floor-pass-flash {
+  from {
+    filter: brightness(1.25);
+  }
+  to {
+    filter: brightness(1);
+  }
+}
+
+@keyframes cable-run {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 8px;
+  }
+}
+
 .floor__label {
   position: relative;
   z-index: 1;
@@ -408,7 +469,7 @@
 
 .floor__num {
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 800;
 }
 
@@ -424,9 +485,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
-  padding: 8px 8px 14px;
-  /* 室内：浅色墙 + 玻璃感 */
+  gap: 2px;
+  padding: 4px 6px 12px;
   background:
     linear-gradient(
       180deg,
@@ -533,8 +593,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 8px;
-  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 5px 7px;
+  transition: transform 0.56s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
 
@@ -675,14 +735,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  width: 40px;
-  min-height: 44px;
+  width: 34px;
+  min-height: 36px;
   animation: passenger-in 0.35s ease;
 }
 
 .passenger--cabin {
-  width: 28px;
-  min-height: 32px;
+  width: 24px;
+  min-height: 28px;
 }
 
 .passenger--arrived {
@@ -691,22 +751,22 @@
 }
 
 .passenger__face {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   box-shadow:
     0 2px 5px rgba(40, 50, 60, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .passenger--cabin .passenger__face {
-  width: 22px;
-  height: 22px;
-  font-size: 0.75rem;
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
 }
 
 .passenger--office .passenger__face {
@@ -829,35 +889,22 @@
   color: var(--accent-dim);
 }
 
-.game__controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: auto;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(40, 60, 80, 0.1);
-}
-
 .command-slots {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
   flex-wrap: wrap;
 }
 
 .slot {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.55);
   border: 1.5px dashed var(--steel-dark);
   color: var(--muted);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.92rem;
   transition:
     background 0.25s,
     color 0.25s,
@@ -888,8 +935,8 @@
 
 .floor-btn {
   flex: 1;
-  max-width: 64px;
-  height: 44px;
+  max-width: 56px;
+  height: 40px;
   border-radius: 10px;
   background: linear-gradient(180deg, #4a545e 0%, #2e363e 100%);
   color: #eef2f5;
@@ -913,10 +960,10 @@
 }
 
 .btn {
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-radius: 999px;
   font-weight: 650;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   background: rgba(255, 255, 255, 0.65);
   color: var(--ink);
   border: 1px solid rgba(255, 255, 255, 0.8);
@@ -943,11 +990,11 @@
 }
 
 @media (min-width: 600px) {
-  .game {
-    padding-top: 28px;
+  .game__title {
+    font-size: 1.35rem;
   }
 
-  .game__title {
-    font-size: 1.85rem;
+  .game__scroll {
+    padding-top: 16px;
   }
 }
