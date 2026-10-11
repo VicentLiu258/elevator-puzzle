@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { TOTAL_FLOORS, type Passenger, type SimStep } from '../engine/types'
+import {
+  TOTAL_FLOORS,
+  VIEWPORT_FLOORS,
+  type Passenger,
+  type SimStep,
+} from '../engine/types'
 import { Elevator } from './Elevator'
 import { FloorRow } from './Floor'
 
-/** 楼层略压缩，方便与底部固定栏同屏 */
-const FLOOR_HEIGHT = 68
-/** 电梯层间过渡总时长（与 CSS transition 对齐） */
+const FLOOR_HEIGHT = 72
 const TRANSIT_MS = 560
 
 interface Props {
@@ -15,7 +18,6 @@ interface Props {
   initialWaiting: Map<number, Passenger[]>
   arrivalFlashIds: Set<string>
   undeliveredIds: Set<string>
-  /** 播放中：途经楼层逐层闪烁 */
   isRunning?: boolean
 }
 
@@ -28,6 +30,17 @@ function floorsBetween(from: number, to: number): number[] {
     if (f === to) break
   }
   return path
+}
+
+/** 电梯所在层对应的视口页（每 VIEWPORT_FLOORS 层一页，从 1F 起算） */
+function pageForFloor(floor: number): number {
+  return Math.floor((floor - 1) / VIEWPORT_FLOORS)
+}
+
+/** 该页视口顶部应显示的最高楼层 */
+function pageTopFloor(page: number): number {
+  const windowEnd = Math.min((page + 1) * VIEWPORT_FLOORS, TOTAL_FLOORS)
+  return windowEnd
 }
 
 export function Building({
@@ -50,6 +63,21 @@ export function Building({
     return list
   }, [])
 
+  const needsPaging = TOTAL_FLOORS > VIEWPORT_FLOORS
+  const [page, setPage] = useState(() => pageForFloor(floor))
+
+  // 电梯换层时：若离开当前 5 层窗口，整页滚动
+  useEffect(() => {
+    const next = pageForFloor(floor)
+    setPage((prev) => (prev === next ? prev : next))
+  }, [floor])
+
+  const viewportHeight = Math.min(VIEWPORT_FLOORS, TOTAL_FLOORS) * FLOOR_HEIGHT
+  const facadeHeight = TOTAL_FLOORS * FLOOR_HEIGHT
+  const scrollY = needsPaging
+    ? (TOTAL_FLOORS - pageTopFloor(page)) * FLOOR_HEIGHT
+    : 0
+
   const prevFloorRef = useRef(floor)
   const [passingFloor, setPassingFloor] = useState<number | null>(null)
   const [inTransit, setInTransit] = useState(false)
@@ -58,10 +86,8 @@ export function Building({
     const from = prevFloorRef.current
     const to = floor
     prevFloorRef.current = to
-
     if (from === to) return
 
-    // 仅在自动播放时做途经闪烁；单步也给一次短闪
     const path = floorsBetween(from, to)
     const timers: number[] = []
     setInTransit(true)
@@ -87,59 +113,91 @@ export function Building({
     }
   }, [floor])
 
-  // 停止运行时清掉途经高亮
   useEffect(() => {
     if (!isRunning && !inTransit) {
       setPassingFloor(null)
     }
   }, [isRunning, inTransit])
 
+  const pageLabel = needsPaging
+    ? `${page * VIEWPORT_FLOORS + 1}–${pageTopFloor(page)}F`
+    : null
+
   return (
     <div className="building">
+      {needsPaging && (
+        <div className="building__page-bar">
+          <button
+            type="button"
+            className="building__page-btn"
+            disabled={page >= pageForFloor(TOTAL_FLOORS)}
+            onClick={() => setPage((p) => Math.min(p + 1, pageForFloor(TOTAL_FLOORS)))}
+            title="更高楼层"
+          >
+            ↑
+          </button>
+          <span className="building__page-label">{pageLabel}</span>
+          <button
+            type="button"
+            className="building__page-btn"
+            disabled={page <= 0}
+            onClick={() => setPage((p) => Math.max(p - 1, 0))}
+            title="更低楼层"
+          >
+            ↓
+          </button>
+        </div>
+      )}
+
       <div className="tower">
         <div className="tower__crown" aria-hidden>
           <div className="tower__crown-bar" />
           <div className="tower__crown-glass" />
         </div>
 
-        <div
-          className={`tower__facade${inTransit ? ' tower__facade--moving' : ''}`}
-          style={{ height: TOTAL_FLOORS * FLOOR_HEIGHT }}
-        >
-          <div className="tower__glare" aria-hidden />
-          <div className="tower__mullions" aria-hidden />
+        <div className="tower__viewport" style={{ height: viewportHeight }}>
+          <div
+            className={`tower__facade${inTransit ? ' tower__facade--moving' : ''}`}
+            style={{
+              height: facadeHeight,
+              transform: `translateY(-${scrollY}px)`,
+            }}
+          >
+            <div className="tower__glare" aria-hidden />
+            <div className="tower__mullions" aria-hidden />
 
-          <div className="tower__floors">
-            {floors.map((f) => (
-              <FloorRow
-                key={f}
-                floor={f}
-                height={FLOOR_HEIGHT}
-                waiting={waiting.get(f) ?? []}
-                arrived={arrived?.get(f) ?? []}
-                arrivalFlashIds={arrivalFlashIds}
-                undeliveredIds={undeliveredIds}
-                isActive={f === floor && !inTransit}
-                isPassing={passingFloor === f}
+            <div className="tower__floors">
+              {floors.map((f) => (
+                <FloorRow
+                  key={f}
+                  floor={f}
+                  height={FLOOR_HEIGHT}
+                  waiting={waiting.get(f) ?? []}
+                  arrived={arrived?.get(f) ?? []}
+                  arrivalFlashIds={arrivalFlashIds}
+                  undeliveredIds={undeliveredIds}
+                  isActive={f === floor && !inTransit}
+                  isPassing={passingFloor === f}
+                />
+              ))}
+            </div>
+
+            <div className="tower__shaft" aria-hidden>
+              <div className="tower__shaft-metal" />
+              <div className="tower__shaft-rail tower__shaft-rail--left" />
+              <div className="tower__shaft-rail tower__shaft-rail--right" />
+              <div className="tower__shaft-cables" />
+            </div>
+
+            <div className="tower__elevator-track">
+              <Elevator
+                floor={floor}
+                capacity={capacity}
+                passengers={inElevator}
+                floorHeight={FLOOR_HEIGHT}
+                doorsOpen={!inTransit}
               />
-            ))}
-          </div>
-
-          <div className="tower__shaft" aria-hidden>
-            <div className="tower__shaft-metal" />
-            <div className="tower__shaft-rail tower__shaft-rail--left" />
-            <div className="tower__shaft-rail tower__shaft-rail--right" />
-            <div className="tower__shaft-cables" />
-          </div>
-
-          <div className="tower__elevator-track">
-            <Elevator
-              floor={floor}
-              capacity={capacity}
-              passengers={inElevator}
-              floorHeight={FLOOR_HEIGHT}
-              doorsOpen={!inTransit}
-            />
+            </div>
           </div>
         </div>
 

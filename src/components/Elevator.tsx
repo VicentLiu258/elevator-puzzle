@@ -1,4 +1,5 @@
 import type { Passenger } from '../engine/types'
+import { TOTAL_FLOORS } from '../engine/types'
 import { PassengerBadge } from './PassengerBadge'
 
 interface Props {
@@ -16,7 +17,8 @@ export function Elevator({
   floorHeight,
   doorsOpen = true,
 }: Props) {
-  const offset = (5 - floor) * floorHeight
+  // 整栋楼坐标系：最高层在顶部
+  const offset = (TOTAL_FLOORS - floor) * floorHeight
   const emptySlots = Math.max(0, capacity - passengers.length)
 
   return (

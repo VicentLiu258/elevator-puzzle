@@ -5,10 +5,13 @@ interface Props {
   onSelect: (floor: number) => void
 }
 
+/** 竖排楼层键：高楼层在上，与大楼方向一致 */
 export function FloorButtons({ disabled, onSelect }: Props) {
+  const floors = Array.from({ length: TOTAL_FLOORS }, (_, i) => TOTAL_FLOORS - i)
+
   return (
     <div className="floor-buttons" role="group" aria-label="选择停靠楼层">
-      {Array.from({ length: TOTAL_FLOORS }, (_, i) => i + 1).map((floor) => (
+      {floors.map((floor) => (
         <button
           key={floor}
           type="button"

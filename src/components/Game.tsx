@@ -72,123 +72,137 @@ export function Game() {
 
   return (
     <div className="game">
-      <div className="game__scroll">
-        <header className="game__header">
-          <div className="game__title-row">
-            <h1 className="game__title">电梯今天听你的</h1>
-            <div className="game__level-meta">
-              <strong>
-                {level.id}. {level.name}
-              </strong>
-              <span>
-                容量 {level.capacity} · 停靠 ≤{level.maxStops}
-              </span>
-            </div>
+      <header className="game__header">
+        <div className="game__title-row">
+          <h1 className="game__title">电梯今天听你的</h1>
+          <div className="game__level-meta">
+            <strong>
+              {level.id}. {level.name}
+            </strong>
+            <span>
+              容量 {level.capacity} · ≤{level.maxStops} 停
+            </span>
           </div>
-          <LevelSelect
-            levels={LEVELS}
-            currentId={level.id}
-            isCleared={isCleared}
-            isUnlocked={isUnlocked}
-            onSelect={setLevelId}
-          />
+        </div>
+        <LevelSelect
+          levels={LEVELS}
+          currentId={level.id}
+          isCleared={isCleared}
+          isUnlocked={isUnlocked}
+          onSelect={setLevelId}
+        />
+        <EventLog text={playback.currentStep?.event.description ?? ''} />
+      </header>
+
+      <div className="game__stage">
+        <div className="game__tower-col">
           {editing && level.description && (
             <p className="game__desc">{level.description}</p>
           )}
-          <EventLog text={playback.currentStep?.event.description ?? ''} />
-        </header>
-
-        <Building
-          capacity={level.capacity}
-          startFloor={level.startFloor}
-          step={playback.currentStep}
-          initialWaiting={initialWaiting}
-          arrivalFlashIds={arrivalFlashIds}
-          undeliveredIds={undeliveredIds}
-          isRunning={isRunning}
-        />
-
-        {playback.mode === 'finished' && playback.result && (
-          <div className="game__result-inline">
+          <Building
+            capacity={level.capacity}
+            startFloor={level.startFloor}
+            step={playback.currentStep}
+            initialWaiting={initialWaiting}
+            arrivalFlashIds={arrivalFlashIds}
+            undeliveredIds={undeliveredIds}
+            isRunning={isRunning}
+          />
+          {playback.mode === 'finished' && playback.result && (
             <ResultPanel
               success={playback.result.success}
               failureInfo={playback.result.failureInfo}
             />
-          </div>
-        )}
-      </div>
-
-      {/* 底部固定编排栏：无需滚动即可操作 */}
-      <section className="game__dock" aria-label="编排与播放">
-        <CommandSlots
-          maxStops={level.maxStops}
-          commands={playback.commands}
-          onRemove={playback.removeSlot}
-          highlightCount={slotHighlight}
-          disabled={!editing}
-        />
-        <FloorButtons
-          onSelect={playback.addFloor}
-          disabled={!editing || playback.commands.length >= level.maxStops}
-        />
-
-        <div className="game__actions">
-          {editing && (
-            <>
-              <button type="button" className="btn btn--ghost" onClick={playback.clearCommands}>
-                清空
-              </button>
-              <button
-                type="button"
-                className="btn btn--primary"
-                onClick={playback.run}
-                disabled={playback.commands.length === 0}
-              >
-                运行
-              </button>
-            </>
-          )}
-
-          {(playback.mode === 'playing' ||
-            playback.mode === 'paused' ||
-            playback.mode === 'finished') && (
-            <>
-              <button type="button" className="btn btn--ghost" onClick={playback.stepBack}>
-                上一步
-              </button>
-              <button type="button" className="btn btn--ghost" onClick={playback.stepForward}>
-                下一步
-              </button>
-              {playback.mode === 'playing' ? (
-                <button type="button" className="btn" onClick={playback.pause}>
-                  暂停
-                </button>
-              ) : playback.mode === 'paused' ? (
-                <button type="button" className="btn" onClick={playback.resume}>
-                  继续
-                </button>
-              ) : null}
-              <button type="button" className="btn" onClick={playback.replay}>
-                重播
-              </button>
-              <button type="button" className="btn btn--ghost" onClick={playback.clearCommands}>
-                重新编排
-              </button>
-              {playback.mode === 'finished' &&
-                playback.result?.success &&
-                level.id < LEVELS.length && (
-                  <button
-                    type="button"
-                    className="btn btn--accent"
-                    onClick={() => setLevelId(level.id + 1)}
-                  >
-                    下一关
-                  </button>
-                )}
-            </>
           )}
         </div>
-      </section>
+
+        {/* 右侧编排面板 */}
+        <aside className="game__dock" aria-label="编排与播放">
+          <div className="dock__section">
+            <div className="dock__label">停靠序列</div>
+            <CommandSlots
+              maxStops={level.maxStops}
+              commands={playback.commands}
+              onRemove={playback.removeSlot}
+              highlightCount={slotHighlight}
+              disabled={!editing}
+            />
+          </div>
+
+          <div className="dock__section dock__section--floors">
+            <div className="dock__label">楼层</div>
+            <FloorButtons
+              onSelect={playback.addFloor}
+              disabled={!editing || playback.commands.length >= level.maxStops}
+            />
+          </div>
+
+          <div className="dock__actions">
+            {editing && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={playback.clearCommands}
+                >
+                  清空
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={playback.run}
+                  disabled={playback.commands.length === 0}
+                >
+                  运行
+                </button>
+              </>
+            )}
+
+            {(playback.mode === 'playing' ||
+              playback.mode === 'paused' ||
+              playback.mode === 'finished') && (
+              <>
+                <button type="button" className="btn btn--ghost" onClick={playback.stepBack}>
+                  上一步
+                </button>
+                <button type="button" className="btn btn--ghost" onClick={playback.stepForward}>
+                  下一步
+                </button>
+                {playback.mode === 'playing' ? (
+                  <button type="button" className="btn" onClick={playback.pause}>
+                    暂停
+                  </button>
+                ) : playback.mode === 'paused' ? (
+                  <button type="button" className="btn" onClick={playback.resume}>
+                    继续
+                  </button>
+                ) : null}
+                <button type="button" className="btn" onClick={playback.replay}>
+                  重播
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={playback.clearCommands}
+                >
+                  重编
+                </button>
+                {playback.mode === 'finished' &&
+                  playback.result?.success &&
+                  level.id < LEVELS.length && (
+                    <button
+                      type="button"
+                      className="btn btn--accent"
+                      onClick={() => setLevelId(level.id + 1)}
+                    >
+                      下一关
+                    </button>
+                  )}
+              </>
+            )}
+          </div>
+        </aside>
+      </div>
     </div>
   )
 }

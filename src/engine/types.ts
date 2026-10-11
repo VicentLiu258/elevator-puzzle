@@ -68,7 +68,11 @@ export interface SimResult {
   failureInfo?: FailureInfo
 }
 
+/** 大楼总层数（日后加高只需改此值；UI 按视口分页） */
 export const TOTAL_FLOORS = 5
+
+/** 电梯视口一次显示的层数；超过后每 N 层滚一页 */
+export const VIEWPORT_FLOORS = 5
 
 export const PASSENGER_EMOJI: Record<PassengerType, string> = {
   office: '💼',
