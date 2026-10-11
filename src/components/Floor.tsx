@@ -8,7 +8,6 @@ interface Props {
   arrivalFlashIds: Set<string>
   undeliveredIds: Set<string>
   height: number
-  /** 电梯是否停在本层 */
   isActive: boolean
 }
 
@@ -27,12 +26,15 @@ export function FloorRow({
       style={{ height }}
       data-floor={floor}
     >
+      <div className="floor__slab" aria-hidden />
+
       <div className="floor__label">
         <span className="floor__num">{floor}</span>
         <span className="floor__unit">F</span>
       </div>
 
       <div className="floor__hall">
+        <div className="floor__ceiling" aria-hidden />
         <div className="floor__zone floor__zone--wait" aria-label={`${floor}F 等候`}>
           {waiting.map((p) => (
             <PassengerBadge
@@ -43,7 +45,6 @@ export function FloorRow({
             />
           ))}
         </div>
-
         <div className="floor__zone floor__zone--arrived" aria-label={`${floor}F 已送达`}>
           {arrived.map((p) => (
             <PassengerBadge
@@ -54,14 +55,16 @@ export function FloorRow({
             />
           ))}
         </div>
+        <div className="floor__stone" aria-hidden />
       </div>
 
       <div
         className={`floor__doorway${isActive ? ' floor__doorway--open' : ''}`}
         aria-hidden
       >
-        <div className="floor__sill" />
-        {isActive && <span className="floor__door-tag">开门</span>}
+        <div className="floor__portal">
+          {isActive && <span className="floor__door-tag">OPEN</span>}
+        </div>
       </div>
     </div>
   )
