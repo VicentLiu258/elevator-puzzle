@@ -45,13 +45,15 @@ export function FloorRow({
 
       <div className="floor__hall">
         <div className="floor__ceiling" aria-hidden />
-        <div className="floor__zone floor__zone--wait" aria-label={`${floor}F 等候`}>
-          {waiting.map((p) => (
+        {/* waiting 已按 queueOrder 排序；CSS row-reverse 让队首靠近右侧电梯门 */}
+        <div className="floor__zone floor__zone--wait" aria-label={`${floor}F 等候（靠门者先上）`}>
+          {waiting.map((p, index) => (
             <PassengerBadge
               key={p.id}
               passenger={p}
               place="hallway"
               highlight={undeliveredIds.has(p.id)}
+              queueIndex={index + 1}
             />
           ))}
         </div>

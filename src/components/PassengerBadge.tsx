@@ -12,6 +12,8 @@ interface Props {
   highlight?: boolean
   /** hallway | cabin | arrived */
   place?: 'hallway' | 'cabin' | 'arrived'
+  /** 等候队列序号：1 = 靠门先上 */
+  queueIndex?: number
 }
 
 export function PassengerBadge({
@@ -19,6 +21,7 @@ export function PassengerBadge({
   showArrivalEmoji,
   highlight,
   place = 'hallway',
+  queueIndex,
 }: Props) {
   return (
     <div
@@ -28,11 +31,21 @@ export function PassengerBadge({
         `passenger--${place}`,
         highlight ? 'passenger--highlight' : '',
         showArrivalEmoji ? 'passenger--just-arrived' : '',
+        queueIndex === 1 ? 'passenger--next' : '',
       ]
         .filter(Boolean)
         .join(' ')}
-      title={`${passenger.id}：${passenger.from}F → ${passenger.to}F`}
+      title={
+        queueIndex !== undefined
+          ? `${passenger.id}：排队第 ${queueIndex}（靠门先上）· ${passenger.from}F → ${passenger.to}F`
+          : `${passenger.id}：${passenger.from}F → ${passenger.to}F`
+      }
     >
+      {place === 'hallway' && queueIndex !== undefined && (
+        <span className="passenger__queue" aria-hidden>
+          {queueIndex}
+        </span>
+      )}
       <span className="passenger__face" aria-hidden>
         {PASSENGER_EMOJI[passenger.type]}
       </span>

@@ -657,7 +657,9 @@
 }
 
 .floor__zone--wait {
+  /* 电梯在右侧：队首（先上车）贴门，队尾在左 → 视觉与规则一致 */
   justify-content: flex-end;
+  flex-direction: row-reverse;
 }
 
 .floor__zone--arrived {
@@ -869,6 +871,29 @@
   width: 34px;
   min-height: 36px;
   animation: passenger-in 0.35s ease;
+}
+
+.passenger__queue {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.passenger--next .passenger__queue {
+  background: var(--accent);
 }
 
 .passenger--cabin {
