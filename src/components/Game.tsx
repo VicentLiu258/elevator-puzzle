@@ -70,6 +70,9 @@ export function Game() {
       ? level.maxStops
       : Math.max(0, playback.stepIndex)
 
+  const currentFloor = playback.currentStep?.floor ?? level.startFloor
+  const occupancy = playback.currentStep?.inElevator.length ?? 0
+
   return (
     <div className="game">
       {/* 顶部悬浮结果，不挤压布局 */}
@@ -129,78 +132,110 @@ export function Game() {
           />
         </div>
 
-        <aside className="game__dock" aria-label="编排与播放">
-          <div className="dock__section dock__section--floors">
-            <div className="dock__label">楼层</div>
-            <FloorButtons
-              onSelect={playback.addFloor}
-              disabled={!editing || playback.commands.length >= level.maxStops}
-            />
+        {/* 右侧电梯操纵面板：顶部显示屏，所有按钮置于容器底部 */}
+        <aside className="game__dock cop-panel" aria-label="电梯内操纵盘">
+          {/* 顶部：电梯 LED 指示器与状态面板 */}
+          <div className="cop-display" aria-hidden>
+            <div className="cop-display__screen">
+              <div className="cop-display__led">
+                <span className={`cop-display__arrow ${isRunning ? 'cop-display__arrow--active' : ''}`}>
+                  {isRunning ? '▲' : '▪'}
+                </span>
+                <span className="cop-display__num">{currentFloor}</span>
+                <span className="cop-display__unit">F</span>
+              </div>
+              <div className="cop-display__meta">
+                <span className="cop-display__badge">
+                  {isRunning ? 'RUN' : playback.mode === 'finished' ? 'FIN' : 'IDLE'}
+                </span>
+                <span className="cop-display__cap">
+                  {occupancy}/{level.capacity}P
+                </span>
+              </div>
+            </div>
+            <div className="cop-display__brand">
+              <span>COP-PANEL</span>
+            </div>
           </div>
 
-          <div className="dock__actions">
-            {editing && (
-              <>
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  onClick={playback.clearCommands}
-                >
-                  清空
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={playback.run}
-                  disabled={playback.commands.length === 0}
-                >
-                  运行
-                </button>
-              </>
-            )}
+          {/* 底部按钮区域：沉在容器底部 */}
+          <div className="cop-bottom">
+            <div className="dock__section dock__section--floors">
+              <div className="dock__label">
+                <span>呼梯选层</span>
+              </div>
+              <FloorButtons
+                onSelect={playback.addFloor}
+                disabled={!editing || playback.commands.length >= level.maxStops}
+                currentFloor={currentFloor}
+                selectedFloors={playback.commands}
+              />
+            </div>
 
-            {(playback.mode === 'playing' ||
-              playback.mode === 'paused' ||
-              playback.mode === 'finished') && (
-              <>
-                <button type="button" className="btn btn--ghost" onClick={playback.stepBack}>
-                  上一步
-                </button>
-                <button type="button" className="btn btn--ghost" onClick={playback.stepForward}>
-                  下一步
-                </button>
-                {playback.mode === 'playing' ? (
-                  <button type="button" className="btn" onClick={playback.pause}>
-                    暂停
+            <div className="dock__actions">
+              {editing && (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={playback.clearCommands}
+                  >
+                    清空
                   </button>
-                ) : playback.mode === 'paused' ? (
-                  <button type="button" className="btn" onClick={playback.resume}>
-                    继续
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    onClick={playback.run}
+                    disabled={playback.commands.length === 0}
+                  >
+                    运行
                   </button>
-                ) : null}
-                <button type="button" className="btn" onClick={playback.replay}>
-                  重播
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  onClick={playback.clearCommands}
-                >
-                  重编
-                </button>
-                {playback.mode === 'finished' &&
-                  playback.result?.success &&
-                  level.id < LEVELS.length && (
-                    <button
-                      type="button"
-                      className="btn btn--accent"
-                      onClick={() => setLevelId(level.id + 1)}
-                    >
-                      下一关
+                </>
+              )}
+
+              {(playback.mode === 'playing' ||
+                playback.mode === 'paused' ||
+                playback.mode === 'finished') && (
+                <>
+                  <button type="button" className="btn btn--ghost" onClick={playback.stepBack}>
+                    上一步
+                  </button>
+                  <button type="button" className="btn btn--ghost" onClick={playback.stepForward}>
+                    下一步
+                  </button>
+                  {playback.mode === 'playing' ? (
+                    <button type="button" className="btn" onClick={playback.pause}>
+                      暂停
                     </button>
-                  )}
-              </>
-            )}
+                  ) : playback.mode === 'paused' ? (
+                    <button type="button" className="btn" onClick={playback.resume}>
+                      继续
+                    </button>
+                  ) : null}
+                  <button type="button" className="btn" onClick={playback.replay}>
+                    重播
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={playback.clearCommands}
+                  >
+                    重编
+                  </button>
+                  {playback.mode === 'finished' &&
+                    playback.result?.success &&
+                    level.id < LEVELS.length && (
+                      <button
+                        type="button"
+                        className="btn btn--accent"
+                        onClick={() => setLevelId(level.id + 1)}
+                      >
+                        下一关
+                      </button>
+                    )}
+                </>
+              )}
+            </div>
           </div>
         </aside>
       </div>

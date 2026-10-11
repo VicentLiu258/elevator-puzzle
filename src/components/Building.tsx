@@ -8,7 +8,7 @@ import {
 import { Elevator } from './Elevator'
 import { FloorRow } from './Floor'
 
-const TRANSIT_MS = 560
+const TRANSIT_MS = 600
 const MIN_FLOOR_HEIGHT = 48
 const visibleCount = Math.min(VIEWPORT_FLOORS, TOTAL_FLOORS)
 
@@ -50,10 +50,8 @@ export function Building({
   undeliveredIds,
   isRunning = false,
 }: Props) {
-  const floor = step?.floor ?? startFloor
-  const inElevator = step?.inElevator ?? []
-  const waiting = step?.waiting ?? initialWaiting
-  const arrived = step?.arrived
+  // 电梯物理目标层
+  const targetFloor = step?.floor ?? startFloor
 
   const floors = useMemo(() => {
     const list: number[] = []
@@ -62,7 +60,7 @@ export function Building({
   }, [])
 
   const needsPaging = TOTAL_FLOORS > VIEWPORT_FLOORS
-  const [page, setPage] = useState(() => pageForFloor(floor))
+  const [page, setPage] = useState(() => pageForFloor(targetFloor))
   const viewportRef = useRef<HTMLDivElement>(null)
   const [floorHeight, setFloorHeight] = useState(72)
 
@@ -87,55 +85,99 @@ export function Building({
   }, [])
 
   useEffect(() => {
-    const next = pageForFloor(floor)
+    const next = pageForFloor(targetFloor)
     setPage((prev) => (prev === next ? prev : next))
-  }, [floor])
+  }, [targetFloor])
 
   const facadeHeight = TOTAL_FLOORS * floorHeight
   const scrollY = needsPaging
     ? (TOTAL_FLOORS - pageTopFloor(page)) * floorHeight
     : 0
 
-  const prevFloorRef = useRef(floor)
+  const prevFloorRef = useRef(targetFloor)
+  const prevStepRef = useRef<SimStep | null>(null)
   const [passingFloor, setPassingFloor] = useState<number | null>(null)
   const [inTransit, setInTransit] = useState(false)
+  const [isArrivalSettled, setIsArrivalSettled] = useState(true)
 
+  // 楼层变化与移动两阶段管理：运行时人在车内，到达后人出电梯
   useEffect(() => {
     const from = prevFloorRef.current
-    const to = floor
+    const to = targetFloor
     prevFloorRef.current = to
-    if (from === to) return
 
-    const path = floorsBetween(from, to)
-    const timers: number[] = []
-    setInTransit(true)
+    if (!step) {
+      prevStepRef.current = null
+      setIsArrivalSettled(true)
+      setInTransit(false)
+      setPassingFloor(null)
+      return
+    }
 
-    const slice = Math.max(80, Math.floor(TRANSIT_MS / path.length))
-    path.forEach((f, i) => {
+    if (from !== to) {
+      // 正在奔向新楼层：进入 transit 阶段
+      setIsArrivalSettled(false)
+      setInTransit(true)
+      const path = floorsBetween(from, to)
+      const timers: number[] = []
+
+      const slice = Math.max(70, Math.floor(TRANSIT_MS / path.length))
+      path.forEach((f, i) => {
+        timers.push(
+          window.setTimeout(() => {
+            setPassingFloor(f)
+          }, i * slice),
+        )
+      })
+
       timers.push(
         window.setTimeout(() => {
-          setPassingFloor(f)
-        }, i * slice),
+          setPassingFloor(null)
+          setInTransit(false)
+          setIsArrivalSettled(true)
+          prevStepRef.current = step
+        }, TRANSIT_MS),
       )
-    })
 
-    timers.push(
-      window.setTimeout(() => {
-        setPassingFloor(null)
-        setInTransit(false)
-      }, TRANSIT_MS),
-    )
-
-    return () => {
-      timers.forEach((t) => window.clearTimeout(t))
+      return () => {
+        timers.forEach((t) => window.clearTimeout(t))
+      }
+    } else {
+      // 同层停靠（或初始步 0）
+      setIsArrivalSettled(true)
+      setInTransit(false)
+      setPassingFloor(null)
+      prevStepRef.current = step
     }
-  }, [floor])
+  }, [targetFloor, step])
 
   useEffect(() => {
     if (!isRunning && !inTransit) {
       setPassingFloor(null)
     }
   }, [isRunning, inTransit])
+
+  // 核心逻辑：如果在移动中且有前一步快照，人员展示保持前一步状态（人在电梯里运行）；到达开门后展示当前步！
+  const activeStep = inTransit && prevStepRef.current ? prevStepRef.current : step
+  const inElevator = activeStep?.inElevator ?? []
+  const waiting = activeStep?.waiting ?? initialWaiting
+  const arrived = activeStep?.arrived
+
+  // 到达开门后触发的进出人与问号状态
+  const justBoardedIds = useMemo(() => {
+    if (!isArrivalSettled || !step) return new Set<string>()
+    return new Set(step.event.boarded)
+  }, [isArrivalSettled, step])
+
+  const justAlightedIds = useMemo(() => {
+    if (!isArrivalSettled || !step) return new Set<string>()
+    return new Set(step.event.alighted)
+  }, [isArrivalSettled, step])
+
+  const deniedIds = useMemo(() => {
+    if (!isArrivalSettled || !step) return new Set<string>()
+    return new Set(step.event.deniedBoarding)
+  }, [isArrivalSettled, step])
 
   const pageLabel = needsPaging
     ? `${page * VIEWPORT_FLOORS + 1}–${pageTopFloor(page)}F`
@@ -194,8 +236,10 @@ export function Building({
                   arrived={arrived?.get(f) ?? []}
                   arrivalFlashIds={arrivalFlashIds}
                   undeliveredIds={undeliveredIds}
-                  isActive={f === floor && !inTransit}
+                  isActive={f === targetFloor && !inTransit}
                   isPassing={passingFloor === f}
+                  deniedIds={f === targetFloor ? deniedIds : undefined}
+                  justAlightedIds={f === targetFloor ? justAlightedIds : undefined}
                 />
               ))}
             </div>
@@ -209,11 +253,13 @@ export function Building({
 
             <div className="tower__elevator-track">
               <Elevator
-                floor={floor}
+                floor={targetFloor}
                 capacity={capacity}
                 passengers={inElevator}
                 floorHeight={floorHeight}
                 doorsOpen={!inTransit}
+                justBoardedIds={justBoardedIds}
+                confusedIds={undeliveredIds}
               />
             </div>
           </div>

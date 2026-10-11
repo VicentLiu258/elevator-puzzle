@@ -4,7 +4,7 @@ import type { LevelConfig, SimResult, SimStep } from '../engine/types'
 
 export type PlaybackMode = 'idle' | 'playing' | 'paused' | 'finished'
 
-const STEP_MS = 1000
+const STEP_MS = 1250
 
 export function usePlayback(level: LevelConfig) {
   const [commands, setCommands] = useState<number[]>([])
