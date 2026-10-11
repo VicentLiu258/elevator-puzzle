@@ -109,7 +109,10 @@ export function Game() {
           highlightCount={slotHighlight}
           disabled={!editing}
         />
-        <FloorButtons onSelect={playback.addFloor} disabled={!editing} />
+        <FloorButtons
+          onSelect={playback.addFloor}
+          disabled={!editing || playback.commands.length >= level.maxStops}
+        />
 
         <div className="game__actions">
           {editing && (
@@ -153,6 +156,17 @@ export function Game() {
               <button type="button" className="btn btn--ghost" onClick={playback.clearCommands}>
                 重新编排
               </button>
+              {playback.mode === 'finished' &&
+                playback.result?.success &&
+                level.id < LEVELS.length && (
+                  <button
+                    type="button"
+                    className="btn btn--accent"
+                    onClick={() => setLevelId(level.id + 1)}
+                  >
+                    下一关
+                  </button>
+                )}
             </>
           )}
         </div>
