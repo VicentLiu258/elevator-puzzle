@@ -10,20 +10,35 @@ interface Props {
   passenger: Passenger
   showArrivalEmoji?: boolean
   highlight?: boolean
+  /** hallway | cabin | arrived */
+  place?: 'hallway' | 'cabin' | 'arrived'
 }
 
-export function PassengerBadge({ passenger, showArrivalEmoji, highlight }: Props) {
+export function PassengerBadge({
+  passenger,
+  showArrivalEmoji,
+  highlight,
+  place = 'hallway',
+}: Props) {
   return (
     <div
-      className={`passenger ${TYPE_CLASS[passenger.type]}${highlight ? ' passenger--highlight' : ''}`}
-      title={`${passenger.id} ${passenger.from}→${passenger.to}`}
+      className={[
+        'passenger',
+        TYPE_CLASS[passenger.type],
+        `passenger--${place}`,
+        highlight ? 'passenger--highlight' : '',
+        showArrivalEmoji ? 'passenger--just-arrived' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      title={`${passenger.id}：${passenger.from}F → ${passenger.to}F`}
     >
-      <span className="passenger__emoji">
-        {showArrivalEmoji ? ARRIVAL_EMOJI[passenger.type] : PASSENGER_EMOJI[passenger.type]}
+      <span className="passenger__face" aria-hidden>
+        {PASSENGER_EMOJI[passenger.type]}
       </span>
-      <span className="passenger__label">
-        {passenger.id}
-        <small>→{passenger.to}F</small>
+      <span className="passenger__meta">
+        <span className="passenger__id">{passenger.id}</span>
+        <span className="passenger__dest">→{passenger.to}F</span>
       </span>
       {showArrivalEmoji && (
         <span className="passenger__bubble" aria-hidden>

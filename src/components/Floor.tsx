@@ -8,6 +8,8 @@ interface Props {
   arrivalFlashIds: Set<string>
   undeliveredIds: Set<string>
   height: number
+  /** 电梯是否停在本层 */
+  isActive: boolean
 }
 
 export function FloorRow({
@@ -17,29 +19,50 @@ export function FloorRow({
   arrivalFlashIds,
   undeliveredIds,
   height,
+  isActive,
 }: Props) {
   return (
-    <div className="floor" style={{ height }}>
-      <div className="floor__label">{floor}F</div>
-      <div className="floor__waiting">
-        {waiting.map((p) => (
-          <PassengerBadge
-            key={p.id}
-            passenger={p}
-            highlight={undeliveredIds.has(p.id)}
-          />
-        ))}
+    <div
+      className={`floor${isActive ? ' floor--active' : ''}`}
+      style={{ height }}
+      data-floor={floor}
+    >
+      <div className="floor__label">
+        <span className="floor__num">{floor}</span>
+        <span className="floor__unit">F</span>
       </div>
-      <div className="floor__arrived">
-        {arrived.map((p) => (
-          <PassengerBadge
-            key={p.id}
-            passenger={p}
-            showArrivalEmoji={arrivalFlashIds.has(p.id)}
-          />
-        ))}
+
+      <div className="floor__hall">
+        <div className="floor__zone floor__zone--wait" aria-label={`${floor}F 等候`}>
+          {waiting.map((p) => (
+            <PassengerBadge
+              key={p.id}
+              passenger={p}
+              place="hallway"
+              highlight={undeliveredIds.has(p.id)}
+            />
+          ))}
+        </div>
+
+        <div className="floor__zone floor__zone--arrived" aria-label={`${floor}F 已送达`}>
+          {arrived.map((p) => (
+            <PassengerBadge
+              key={p.id}
+              passenger={p}
+              place="arrived"
+              showArrivalEmoji={arrivalFlashIds.has(p.id)}
+            />
+          ))}
+        </div>
       </div>
-      <div className="floor__shaft" />
+
+      <div
+        className={`floor__doorway${isActive ? ' floor__doorway--open' : ''}`}
+        aria-hidden
+      >
+        <div className="floor__sill" />
+        {isActive && <span className="floor__door-tag">开门</span>}
+      </div>
     </div>
   )
 }
