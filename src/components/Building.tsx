@@ -8,8 +8,9 @@ import {
 import { Elevator } from './Elevator'
 import { FloorRow } from './Floor'
 
-const FLOOR_HEIGHT = 72
 const TRANSIT_MS = 560
+const MIN_FLOOR_HEIGHT = 48
+const visibleCount = Math.min(VIEWPORT_FLOORS, TOTAL_FLOORS)
 
 interface Props {
   capacity: number
@@ -32,15 +33,12 @@ function floorsBetween(from: number, to: number): number[] {
   return path
 }
 
-/** 电梯所在层对应的视口页（每 VIEWPORT_FLOORS 层一页，从 1F 起算） */
 function pageForFloor(floor: number): number {
   return Math.floor((floor - 1) / VIEWPORT_FLOORS)
 }
 
-/** 该页视口顶部应显示的最高楼层 */
 function pageTopFloor(page: number): number {
-  const windowEnd = Math.min((page + 1) * VIEWPORT_FLOORS, TOTAL_FLOORS)
-  return windowEnd
+  return Math.min((page + 1) * VIEWPORT_FLOORS, TOTAL_FLOORS)
 }
 
 export function Building({
@@ -65,17 +63,37 @@ export function Building({
 
   const needsPaging = TOTAL_FLOORS > VIEWPORT_FLOORS
   const [page, setPage] = useState(() => pageForFloor(floor))
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const [floorHeight, setFloorHeight] = useState(72)
 
-  // 电梯换层时：若离开当前 5 层窗口，整页滚动
+  // 视口高度变化时：楼层等高铺满
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+
+    const apply = (h: number) => {
+      const next = Math.max(MIN_FLOOR_HEIGHT, Math.floor(h / visibleCount))
+      setFloorHeight(next)
+    }
+
+    apply(el.clientHeight)
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      apply(entry.contentRect.height)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   useEffect(() => {
     const next = pageForFloor(floor)
     setPage((prev) => (prev === next ? prev : next))
   }, [floor])
 
-  const viewportHeight = Math.min(VIEWPORT_FLOORS, TOTAL_FLOORS) * FLOOR_HEIGHT
-  const facadeHeight = TOTAL_FLOORS * FLOOR_HEIGHT
+  const facadeHeight = TOTAL_FLOORS * floorHeight
   const scrollY = needsPaging
-    ? (TOTAL_FLOORS - pageTopFloor(page)) * FLOOR_HEIGHT
+    ? (TOTAL_FLOORS - pageTopFloor(page)) * floorHeight
     : 0
 
   const prevFloorRef = useRef(floor)
@@ -155,7 +173,7 @@ export function Building({
           <div className="tower__crown-glass" />
         </div>
 
-        <div className="tower__viewport" style={{ height: viewportHeight }}>
+        <div ref={viewportRef} className="tower__viewport">
           <div
             className={`tower__facade${inTransit ? ' tower__facade--moving' : ''}`}
             style={{
@@ -171,7 +189,7 @@ export function Building({
                 <FloorRow
                   key={f}
                   floor={f}
-                  height={FLOOR_HEIGHT}
+                  height={floorHeight}
                   waiting={waiting.get(f) ?? []}
                   arrived={arrived?.get(f) ?? []}
                   arrivalFlashIds={arrivalFlashIds}
@@ -194,7 +212,7 @@ export function Building({
                 floor={floor}
                 capacity={capacity}
                 passengers={inElevator}
-                floorHeight={FLOOR_HEIGHT}
+                floorHeight={floorHeight}
                 doorsOpen={!inTransit}
               />
             </div>

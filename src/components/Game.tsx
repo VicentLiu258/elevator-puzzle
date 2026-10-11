@@ -72,6 +72,16 @@ export function Game() {
 
   return (
     <div className="game">
+      {/* 顶部悬浮结果，不挤压布局 */}
+      {playback.mode === 'finished' && playback.result && (
+        <div className="result-float">
+          <ResultPanel
+            success={playback.result.success}
+            failureInfo={playback.result.failureInfo}
+          />
+        </div>
+      )}
+
       <header className="game__header">
         <div className="game__title-row">
           <h1 className="game__title">电梯今天听你的</h1>
@@ -96,30 +106,9 @@ export function Game() {
 
       <div className="game__stage">
         <div className="game__tower-col">
-          {editing && level.description && (
-            <p className="game__desc">{level.description}</p>
-          )}
-          <Building
-            capacity={level.capacity}
-            startFloor={level.startFloor}
-            step={playback.currentStep}
-            initialWaiting={initialWaiting}
-            arrivalFlashIds={arrivalFlashIds}
-            undeliveredIds={undeliveredIds}
-            isRunning={isRunning}
-          />
-          {playback.mode === 'finished' && playback.result && (
-            <ResultPanel
-              success={playback.result.success}
-              failureInfo={playback.result.failureInfo}
-            />
-          )}
-        </div>
-
-        {/* 右侧编排面板 */}
-        <aside className="game__dock" aria-label="编排与播放">
-          <div className="dock__section">
-            <div className="dock__label">停靠序列</div>
+          {/* 停靠序列：电梯顶部，横向缩小 */}
+          <div className="tower-commands">
+            <span className="tower-commands__label">序列</span>
             <CommandSlots
               maxStops={level.maxStops}
               commands={playback.commands}
@@ -129,6 +118,18 @@ export function Game() {
             />
           </div>
 
+          <Building
+            capacity={level.capacity}
+            startFloor={level.startFloor}
+            step={playback.currentStep}
+            initialWaiting={initialWaiting}
+            arrivalFlashIds={arrivalFlashIds}
+            undeliveredIds={undeliveredIds}
+            isRunning={isRunning}
+          />
+        </div>
+
+        <aside className="game__dock" aria-label="编排与播放">
           <div className="dock__section dock__section--floors">
             <div className="dock__label">楼层</div>
             <FloorButtons
