@@ -127,6 +127,16 @@ export function solve(
   const searchLimit = options?.searchLimit ?? level.maxStops + 8
   const total = level.passengers.length
 
+  // 只搜乘客出发/目的楼层：停靠空层不会上下客，可剪枝
+  const relevant = new Set<number>()
+  for (const p of level.passengers) {
+    relevant.add(p.from)
+    relevant.add(p.to)
+  }
+  // 起始层也可能需要再次停靠（重复停靠规则）
+  relevant.add(level.startFloor)
+  const searchFloors = [...relevant].sort((a, b) => a - b)
+
   const waiting0 = buildInitialWaiting(level.passengers)
   // 初始上客（不计入停靠）
   const init = applyStop(
@@ -168,7 +178,7 @@ export function solve(
     if (cur.stopsUsed >= searchLimit) continue
     if (cur.stopsUsed >= minStops) continue
 
-    for (let nextFloor = 1; nextFloor <= TOTAL_FLOORS; nextFloor++) {
+    for (const nextFloor of searchFloors) {
       const applied = applyStop(
         nextFloor,
         level.capacity,

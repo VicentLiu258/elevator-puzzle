@@ -5,7 +5,7 @@ interface Props {
   onSelect: (floor: number) => void
 }
 
-/** 竖排楼层键：高楼层在上，与大楼方向一致 */
+/** 3 列网格：高楼层在上，与大楼方向一致 */
 export function FloorButtons({ disabled, onSelect }: Props) {
   const floors = Array.from({ length: TOTAL_FLOORS }, (_, i) => TOTAL_FLOORS - i)
 
@@ -19,7 +19,7 @@ export function FloorButtons({ disabled, onSelect }: Props) {
           disabled={disabled}
           onClick={() => onSelect(floor)}
         >
-          {floor}F
+          {floor}
         </button>
       ))}
     </div>

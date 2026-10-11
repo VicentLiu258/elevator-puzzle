@@ -4,9 +4,9 @@ export type PassengerType = 'office' | 'student' | 'elder'
 export interface Passenger {
   id: string
   type: PassengerType
-  /** 起点楼层 1–5 */
+  /** 起点楼层 1–TOTAL_FLOORS */
   from: number
-  /** 目的楼层 1–5 */
+  /** 目的楼层 1–TOTAL_FLOORS */
   to: number
   /** 同层排队顺序，越小越靠前 */
   queueOrder: number
@@ -69,7 +69,7 @@ export interface SimResult {
 }
 
 /** 大楼总层数（日后加高只需改此值；UI 按视口分页） */
-export const TOTAL_FLOORS = 5
+export const TOTAL_FLOORS = 15
 
 /** 电梯视口一次显示的层数；超过后每 N 层滚一页 */
 export const VIEWPORT_FLOORS = 5

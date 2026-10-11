@@ -11,8 +11,8 @@ function main(): void {
   let allOk = true
 
   for (const level of LEVELS) {
-    const searchLevel = { ...level, maxStops: 10 }
-    const result = solve(searchLevel, { searchLimit: 10, maxSolutions: 50 })
+    const searchLevel = { ...level, maxStops: 20 }
+    const result = solve(searchLevel, { searchLimit: 16, maxSolutions: 50 })
 
     if (!Number.isFinite(result.minStops)) {
       console.log(`关卡 ${level.id}「${level.name}」: ❌ 无解`)
