@@ -350,6 +350,9 @@ export const LEVELS: LevelConfig[] = [
   },
 ]
 
+export const ALL_PLAYABLE_LEVELS: LevelConfig[] = [EXAMPLE_LEVEL, ...LEVELS]
+
 export function getLevel(id: number): LevelConfig | undefined {
+  if (id === 0) return EXAMPLE_LEVEL
   return LEVELS.find((l) => l.id === id)
 }

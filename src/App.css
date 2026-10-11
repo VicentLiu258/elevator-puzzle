@@ -58,12 +58,57 @@
 .game__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 850;
   letter-spacing: -0.02em;
   color: var(--ink);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
   white-space: nowrap;
+}
+
+.game__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.game__pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 6px rgba(40, 60, 80, 0.08);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--ink);
+}
+
+.game__pill-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(40, 60, 80, 0.14);
+}
+
+.game__pill-btn--example {
+  background: linear-gradient(135deg, rgba(230, 242, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border-color: rgba(90, 154, 208, 0.4);
+  color: #1e5280;
+}
+
+.game__pill-btn--help {
+  background: linear-gradient(135deg, rgba(255, 245, 224, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border-color: rgba(235, 160, 50, 0.4);
+  color: #925808;
+}
+
+.game__pill-icon {
+  font-size: 0.75rem;
 }
 
 .game__level-meta {
@@ -71,10 +116,10 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 0;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--muted);
   text-align: right;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .game__level-meta strong {
@@ -297,6 +342,13 @@
   background: linear-gradient(160deg, #fff 0%, #e8eef3 100%);
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(196, 120, 59, 0.35);
+}
+
+.level-chip--demo {
+  background: linear-gradient(145deg, #e4eff8 0%, #c4dbf0 100%);
+  color: #175284;
+  font-weight: 800;
+  border-color: rgba(60, 130, 190, 0.45);
 }
 
 .level-chip--cleared {
@@ -1438,4 +1490,414 @@
   .game__stage {
     grid-template-columns: minmax(0, 1fr) 112px;
   }
+}
+
+/* —— 浮动结果栏增强 —— */
+.result__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.result__head strong {
+  margin-bottom: 0;
+}
+
+.result__help-btn {
+  font-size: 0.68rem;
+  font-weight: 750;
+  color: #925808;
+  background: rgba(255, 235, 195, 0.9);
+  border: 1px solid rgba(220, 150, 40, 0.45);
+  border-radius: 999px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.result__help-btn:hover {
+  background: #ffdf9e;
+  transform: scale(1.04);
+}
+
+/* —— 模态弹窗系统 (Modal) —— */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(18, 25, 32, 0.58);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modal-fade-in 0.22s ease;
+}
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.94) 0%, rgba(240, 245, 250, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  box-shadow:
+    0 24px 60px rgba(15, 30, 45, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  animation: modal-pop-in 0.26s cubic-bezier(0.18, 0.9, 0.3, 1.2);
+  overflow: hidden;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.modal-header__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-header__icon {
+  font-size: 1.15rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--ink);
+}
+
+.modal-body {
+  padding: 14px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-section__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #334455;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 规则卡片网格 */
+.rule-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rule-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 4px rgba(40, 60, 80, 0.05);
+}
+
+.rule-card__num {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.rule-card strong {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.rule-card p {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #556677;
+  line-height: 1.35;
+}
+
+/* 示例演练区 */
+.example-brief {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(235, 243, 250, 0.7);
+  border: 1px solid rgba(180, 210, 235, 0.5);
+}
+
+.example-brief__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2b557c;
+}
+
+.example-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.example-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: #384d62;
+  line-height: 1.3;
+}
+
+.example-step__tag {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #2b557c;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.example-seq {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(60, 110, 160, 0.25);
+}
+
+.example-seq__label {
+  font-size: 0.72rem;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+.example-seq__values {
+  display: flex;
+  gap: 4px;
+}
+
+.example-seq__chip {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #425262 0%, #293440 100%);
+  color: #7ee8b0;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* 求助助手战术列表 */
+.help-tactics {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.help-tactic-item {
+  font-size: 0.74rem;
+  color: #334455;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  padding: 6px 10px;
+  border-radius: 8px;
+  line-height: 1.35;
+}
+
+/* 建议下一步卡片 */
+.help-step-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 248, 235, 0.85) 0%, rgba(255, 255, 255, 0.75) 100%);
+  border: 1px solid rgba(240, 175, 75, 0.45);
+}
+
+.help-step-box__content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-step-box__content p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: #634305;
+}
+
+.help-step-box__warn {
+  color: #92400e !important;
+}
+
+.help-step-box__floor {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 850;
+  color: #d97706;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(217, 119, 6, 0.4);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.btn--secondary {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  border-color: #b45309;
+}
+
+/* 最优解锦囊卡片 */
+.help-solution-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(235, 245, 240, 0.8);
+  border: 1px solid rgba(46, 139, 87, 0.35);
+}
+
+.help-solution-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.help-solution-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(180deg, #334440 0%, #1e2a27 100%);
+  border: 1px solid #14201d;
+  padding: 2px 7px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.help-solution-chip__idx {
+  font-size: 0.54rem;
+  color: #94a8a0;
+  font-weight: 700;
+}
+
+.help-solution-chip__num {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 850;
+  color: #6ee7b7;
+}
+
+.help-solution-desc {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #1e5a42;
+  line-height: 1.3;
+}
+
+.help-solution-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.modal-footer .btn {
+  width: auto;
+  min-width: 90px;
 }

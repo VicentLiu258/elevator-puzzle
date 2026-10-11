@@ -33,9 +33,10 @@ export function useProgress() {
 
   const isCleared = useCallback((levelId: number) => cleared.has(levelId), [cleared])
 
-  /** 关卡解锁：第 1 关始终可玩；其余需通关前一关 */
+  /** 关卡解锁：示例关(0)与第 1 关始终可玩；其余需通关前一关 */
   const isUnlocked = useCallback(
-    (levelId: number) => levelId === 1 || cleared.has(levelId - 1) || cleared.has(levelId),
+    (levelId: number) =>
+      levelId === 0 || levelId === 1 || cleared.has(levelId - 1) || cleared.has(levelId),
     [cleared],
   )
 

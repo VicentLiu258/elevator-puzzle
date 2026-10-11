@@ -18,6 +18,7 @@ export function LevelSelect({
   return (
     <div className="level-select" role="navigation" aria-label="关卡选择">
       {levels.map((level) => {
+        const isDemo = level.id === 0
         const unlocked = isUnlocked(level.id)
         const cleared = isCleared(level.id)
         const current = level.id === currentId
@@ -27,16 +28,17 @@ export function LevelSelect({
             type="button"
             className={
               'level-chip' +
+              (isDemo ? ' level-chip--demo' : '') +
               (current ? ' level-chip--current' : '') +
               (cleared ? ' level-chip--cleared' : '') +
               (!unlocked ? ' level-chip--locked' : '')
             }
             disabled={!unlocked}
             onClick={() => onSelect(level.id)}
-            title={level.name}
+            title={isDemo ? `示例关卡：${level.name}` : `第 ${level.id} 关：${level.name}`}
           >
-            {level.id}
-            {cleared ? '✓' : ''}
+            {isDemo ? '例' : level.id}
+            {cleared && !isDemo ? '✓' : ''}
           </button>
         )
       })}

@@ -3,13 +3,14 @@ import type { FailureInfo } from '../engine/types'
 interface Props {
   success: boolean
   failureInfo?: FailureInfo
+  onOpenHelp?: () => void
 }
 
-export function ResultPanel({ success, failureInfo }: Props) {
+export function ResultPanel({ success, failureInfo, onOpenHelp }: Props) {
   if (success) {
     return (
       <div className="result result--success" role="alert">
-        <strong>全部送达</strong>
+        <strong>全部送达 🎉</strong>
         <span>所有乘客都到了目的楼层！</span>
       </div>
     )
@@ -20,7 +21,19 @@ export function ResultPanel({ success, failureInfo }: Props) {
 
   return (
     <div className="result result--fail" role="alert">
-      <strong>未全部送达</strong>
+      <div className="result__head">
+        <strong>未全部送达</strong>
+        {onOpenHelp && (
+          <button
+            type="button"
+            className="result__help-btn"
+            onClick={onOpenHelp}
+            title="查看本关解法提示与策略"
+          >
+            💡 求助提示
+          </button>
+        )}
+      </div>
       {undelivered.length > 0 && (
         <ul>
           {undelivered.map(({ passenger, currentFloor }) => (

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { LEVELS } from '../data/levels'
+import { ALL_PLAYABLE_LEVELS, LEVELS, getLevel } from '../data/levels'
 import { TOTAL_FLOORS } from '../engine/types'
 import type { Passenger } from '../engine/types'
 import { usePlayback } from '../hooks/usePlayback'
@@ -7,7 +7,9 @@ import { useProgress } from '../hooks/useProgress'
 import { Building } from './Building'
 import { CommandSlots } from './CommandSlots'
 import { EventLog } from './EventLog'
+import { ExampleModal } from './ExampleModal'
 import { FloorButtons } from './FloorButtons'
+import { HelpModal } from './HelpModal'
 import { LevelSelect } from './LevelSelect'
 import { ResultPanel } from './ResultPanel'
 
@@ -25,9 +27,13 @@ function buildInitialWaiting(passengers: Passenger[]): Map<number, Passenger[]> 
 
 export function Game() {
   const [levelId, setLevelId] = useState(1)
-  const level = LEVELS.find((l) => l.id === levelId) ?? LEVELS[0]!
+  const level = getLevel(levelId) ?? LEVELS[0]!
   const { markCleared, isCleared, isUnlocked } = useProgress()
   const playback = usePlayback(level)
+
+  // 示例与求助弹窗状态
+  const [showExample, setShowExample] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
 
   const initialWaiting = useMemo(
     () => buildInitialWaiting(level.passengers),
@@ -73,6 +79,25 @@ export function Game() {
   const currentFloor = playback.currentStep?.floor ?? level.startFloor
   const occupancy = playback.currentStep?.inElevator.length ?? 0
 
+  // 载入示例关卡并演示
+  const handlePlayDemo = (targetLevelId: number, demoCommands: number[]) => {
+    setLevelId(targetLevelId)
+    // 稍微延后让组件与 state 完成对齐后播放
+    window.setTimeout(() => {
+      playback.setCommandList(demoCommands, true)
+    }, 80)
+  }
+
+  // 求助：填入下一步
+  const handleApplyNextStep = (floor: number) => {
+    playback.addFloor(floor)
+  }
+
+  // 求助：填入最优解
+  const handleApplySolution = (solution: number[], autoRun = false) => {
+    playback.setCommandList(solution, autoRun)
+  }
+
   return (
     <div className="game">
       {/* 顶部悬浮结果，不挤压布局 */}
@@ -81,24 +106,65 @@ export function Game() {
           <ResultPanel
             success={playback.result.success}
             failureInfo={playback.result.failureInfo}
+            onOpenHelp={() => setShowHelp(true)}
           />
         </div>
       )}
 
+      {/* 新手示例弹窗 */}
+      <ExampleModal
+        isOpen={showExample}
+        onClose={() => setShowExample(false)}
+        onPlayDemo={handlePlayDemo}
+      />
+
+      {/* 关卡智能求助弹窗 */}
+      <HelpModal
+        isOpen={showHelp}
+        level={level}
+        currentCommands={playback.commands}
+        onClose={() => setShowHelp(false)}
+        onApplyNextStep={handleApplyNextStep}
+        onApplySolution={handleApplySolution}
+      />
+
       <header className="game__header">
         <div className="game__title-row">
           <h1 className="game__title">电梯今天听你的</h1>
+
+          <div className="game__header-actions">
+            <button
+              type="button"
+              className="game__pill-btn game__pill-btn--example"
+              onClick={() => setShowExample(true)}
+              title="查看新手规则与经典示例演示"
+            >
+              <span className="game__pill-icon">📖</span>
+              <span>示例</span>
+            </button>
+            <button
+              type="button"
+              className="game__pill-btn game__pill-btn--help"
+              onClick={() => setShowHelp(true)}
+              title="查看本关思路、下一步提示与通关解法"
+            >
+              <span className="game__pill-icon">💡</span>
+              <span>求助</span>
+            </button>
+          </div>
+
           <div className="game__level-meta">
             <strong>
-              {level.id}. {level.name}
+              {level.id === 0 ? '示例关' : `${level.id}. ${level.name}`}
             </strong>
             <span>
               容量 {level.capacity} · ≤{level.maxStops} 停
             </span>
           </div>
         </div>
+
         <LevelSelect
-          levels={LEVELS}
+          levels={ALL_PLAYABLE_LEVELS}
           currentId={level.id}
           isCleared={isCleared}
           isUnlocked={isUnlocked}

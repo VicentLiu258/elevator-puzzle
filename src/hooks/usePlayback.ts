@@ -60,6 +60,36 @@ export function usePlayback(level: LevelConfig) {
     reset()
   }, [mode, reset])
 
+  const setCommandList = useCallback(
+    (cmds: number[], autoRun = false) => {
+      clearTimer()
+      const valid = cmds.slice(0, level.maxStops)
+      setCommands(valid)
+      if (autoRun && valid.length > 0) {
+        const sim = simulate(level, valid)
+        setResult(sim)
+        setStepIndex(0)
+        setMode('playing')
+        let idx = 0
+        timerRef.current = window.setInterval(() => {
+          idx += 1
+          if (idx >= sim.steps.length) {
+            clearTimer()
+            setStepIndex(sim.steps.length - 1)
+            setMode('finished')
+            return
+          }
+          setStepIndex(idx)
+        }, STEP_MS)
+      } else {
+        setResult(null)
+        setStepIndex(0)
+        setMode('idle')
+      }
+    },
+    [clearTimer, level],
+  )
+
   const run = useCallback(() => {
     if (commands.length === 0) return
     clearTimer()
@@ -150,6 +180,7 @@ export function usePlayback(level: LevelConfig) {
     addFloor,
     removeSlot,
     clearCommands,
+    setCommandList,
     run,
     pause,
     resume,
