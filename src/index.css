@@ -1,0 +1,56 @@
+:root {
+  --bg: #1a2f3a;
+  --bg-elev: #243d4a;
+  --panel: #2c4a5a;
+  --text: #e8f1f5;
+  --muted: #8aa4b0;
+  --accent: #3ecf8e;
+  --accent-dim: #2a9d6a;
+  --warn: #f0a060;
+  --danger: #e07070;
+  --office: #4a9eff;
+  --student: #ffb84a;
+  --elder: #c084fc;
+  --shaft: #15252e;
+  --floor-line: rgba(255, 255, 255, 0.08);
+  --radius: 10px;
+  --font: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font);
+  line-height: 1.45;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, #2a4a5c 0%, transparent 55%),
+    var(--bg);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
