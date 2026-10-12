@@ -22,8 +22,8 @@ interface Props {
   isRunning?: boolean
   /** 为 true 时视口跟随电梯；编排预览时应为 false */
   followElevator?: boolean
-  /** 外部请求聚焦到某层（如点选楼层按钮时） */
-  focusFloor?: number | null
+  /** 外部一次性聚焦请求（点选楼层按钮）；seq 变化即生效，不锁定场景 */
+  focusRequest?: { floor: number; seq: number } | null
   /** 关卡 id，用于切换关卡时重置预览页 */
   levelId?: number
 }
@@ -71,7 +71,7 @@ export function Building({
   undeliveredIds,
   isRunning = false,
   followElevator = true,
-  focusFloor = null,
+  focusRequest = null,
   levelId,
 }: Props) {
   // 电梯物理目标层
@@ -101,6 +101,8 @@ export function Building({
   )
   const viewportRef = useRef<HTMLDivElement>(null)
   const [floorHeight, setFloorHeight] = useState(72)
+  const prevFollowRef = useRef(followElevator)
+  const lastFocusSeqRef = useRef<number | null>(null)
 
   // 视口高度变化时：楼层等高铺满
   useEffect(() => {
@@ -122,25 +124,42 @@ export function Building({
     return () => ro.disconnect()
   }, [])
 
-  // 切换关卡：编排模式下跳到有关键乘客的预览页
+  // 仅在切换关卡时重置预览页（不要在编排过程中反复拉回）
   useEffect(() => {
-    if (followElevator) return
-    setPage(defaultPreviewPage(startFloor, initialWaiting))
-  }, [levelId, startFloor, initialWaiting, followElevator])
+    setPage(
+      followElevator
+        ? pageForFloor(targetFloor)
+        : defaultPreviewPage(startFloor, initialWaiting),
+    )
+    lastFocusSeqRef.current = null
+    // 故意只依赖 levelId：避免 initialWaiting 引用变化把用户手动切换的场景拽回去
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- level 切换是唯一重置点
+  }, [levelId])
 
-  // 运行时跟随电梯；编排时不强制拉回
+  // 从运行态回到编排态时，给一次默认预览；之后完全由用户手动切换
+  useEffect(() => {
+    const wasFollowing = prevFollowRef.current
+    prevFollowRef.current = followElevator
+    if (wasFollowing && !followElevator) {
+      setPage(defaultPreviewPage(startFloor, initialWaiting))
+      lastFocusSeqRef.current = null
+    }
+  }, [followElevator, startFloor, initialWaiting])
+
+  // 运行时跟随电梯；编排时不强制拉回，用户可自由切场景
   useEffect(() => {
     if (!followElevator) return
     const next = pageForFloor(targetFloor)
     setPage((prev) => (prev === next ? prev : next))
   }, [targetFloor, followElevator])
 
-  // 外部聚焦（点选楼层按钮）
+  // 外部聚焦：一次性跳转，不锁定；用户仍可用顶部页签随时切回
   useEffect(() => {
-    if (focusFloor == null || focusFloor < 1) return
-    const next = pageForFloor(focusFloor)
-    setPage((prev) => (prev === next ? prev : next))
-  }, [focusFloor])
+    if (!focusRequest || focusRequest.floor < 1) return
+    if (lastFocusSeqRef.current === focusRequest.seq) return
+    lastFocusSeqRef.current = focusRequest.seq
+    setPage(pageForFloor(focusRequest.floor))
+  }, [focusRequest])
 
   const facadeHeight = TOTAL_FLOORS * floorHeight
   const scrollY = needsPaging

@@ -36,13 +36,21 @@ export function Game() {
   // 示例与求助弹窗状态
   const [showExample, setShowExample] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
-  /** 编排时点击楼层，驱动大楼场景预览 */
-  const [focusFloor, setFocusFloor] = useState<number | null>(null)
+  /** 编排时点击楼层，驱动大楼场景预览（seq 保证每次点击都生效） */
+  const [focusRequest, setFocusRequest] = useState<{ floor: number; seq: number } | null>(
+    null,
+  )
+  const focusSeqRef = useRef(0)
   const pendingDemoRef = useRef<number[] | null>(null)
+
+  const requestFocusFloor = (floor: number) => {
+    focusSeqRef.current += 1
+    setFocusRequest({ floor, seq: focusSeqRef.current })
+  }
 
   const initialWaiting = useMemo(
     () => buildInitialWaiting(level.passengers),
-    [level],
+    [level.id, level.passengers],
   )
 
   const undeliveredIds = useMemo(() => {
@@ -96,7 +104,7 @@ export function Game() {
   const goToLevel = (id: number) => {
     setShowHelp(false)
     setShowExample(false)
-    setFocusFloor(null)
+    setFocusRequest(null)
     setLevelId(id)
   }
 
@@ -125,22 +133,22 @@ export function Game() {
 
   // 求助：填入下一步
   const handleApplyNextStep = (floor: number) => {
-    setFocusFloor(floor)
+    requestFocusFloor(floor)
     playback.addFloor(floor)
   }
 
   // 求助：填入最优解
   const handleApplySolution = (solution: number[], autoRun = false) => {
-    if (solution[0] != null) setFocusFloor(solution[0])
+    if (solution[0] != null) requestFocusFloor(solution[0])
     playback.setCommandList(solution, autoRun)
   }
 
   const handleFloorPreview = (floor: number) => {
-    setFocusFloor(floor)
+    requestFocusFloor(floor)
   }
 
   const handleFloorSelect = (floor: number) => {
-    setFocusFloor(floor)
+    requestFocusFloor(floor)
     playback.addFloor(floor)
   }
 
@@ -244,7 +252,7 @@ export function Game() {
             undeliveredIds={undeliveredIds}
             isRunning={isRunning}
             followElevator={followElevator}
-            focusFloor={focusFloor}
+            focusRequest={focusRequest}
           />
         </div>
 
