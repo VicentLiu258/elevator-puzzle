@@ -147,8 +147,10 @@
   overflow: hidden;
 }
 
-/* 电梯顶部：横向缩小的停靠序列 */
+/* 电梯顶部：横向缩小的停靠序列（层级高于大楼，避免被平移出视口的楼层盖住点击） */
 .tower-commands {
+  position: relative;
+  z-index: 10;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -386,17 +388,27 @@
   min-height: 0;
 }
 
+/*
+ * 楼层场景切换栏。
+ * 必须 position:relative + z-index 高于大楼：幕墙(.tower__facade)按页平移后，
+ * 视口之外的楼层仍会在命中测试中盖住这条栏，导致页签点不到（切到 6–10F 后无法再切换）。
+ * 单靠 overflow / contain 裁剪无法阻止，已用真实浏览器验证。
+ */
 .building__page-bar {
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .building__page-btn {
-  width: 26px;
-  height: 24px;
+  width: 24px;
+  height: 26px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.8);
@@ -404,16 +416,21 @@
   font-weight: 700;
   line-height: 1;
   flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 .building__page-btn:disabled {
   opacity: 0.35;
 }
 
+/* 三个页签等分剩余宽度，窄屏也不会被外层 overflow:hidden 裁掉 */
 .building__page-tabs {
-  display: flex;
-  align-items: center;
-  gap: 3px;
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 2px;
   padding: 2px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.45);
@@ -421,7 +438,8 @@
 }
 
 .building__page-tab {
-  padding: 3px 7px;
+  min-width: 0;
+  padding: 4px 2px;
   border-radius: 6px;
   font-size: 0.62rem;
   font-weight: 750;
@@ -429,8 +447,10 @@
   background: transparent;
   border: none;
   line-height: 1.2;
+  text-align: center;
   white-space: nowrap;
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.15s ease;
 }
 
