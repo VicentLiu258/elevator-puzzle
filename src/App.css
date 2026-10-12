@@ -390,11 +390,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .building__page-btn {
-  width: 28px;
+  width: 26px;
   height: 24px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.65);
@@ -402,6 +403,46 @@
   color: var(--ink);
   font-weight: 700;
   line-height: 1;
+  flex-shrink: 0;
+}
+
+.building__page-btn:disabled {
+  opacity: 0.35;
+}
+
+.building__page-tabs {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.building__page-tab {
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 750;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.building__page-tab:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.building__page-tab--active {
+  color: #fff;
+  background: linear-gradient(180deg, #4a545e 0%, #2e363e 100%);
+  box-shadow: 0 1px 4px rgba(20, 30, 40, 0.25);
 }
 
 .building__page-label {
@@ -1436,6 +1477,12 @@
 .floor-btn__num {
   position: relative;
   z-index: 1;
+}
+
+/* 不可再写入指令时仍可点击预览楼层场景 */
+.floor-btn--preview {
+  opacity: 0.78;
+  cursor: zoom-in;
 }
 
 .btn {

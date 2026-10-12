@@ -20,6 +20,12 @@ interface Props {
   arrivalFlashIds: Set<string>
   undeliveredIds: Set<string>
   isRunning?: boolean
+  /** 为 true 时视口跟随电梯；编排预览时应为 false */
+  followElevator?: boolean
+  /** 外部请求聚焦到某层（如点选楼层按钮时） */
+  focusFloor?: number | null
+  /** 关卡 id，用于切换关卡时重置预览页 */
+  levelId?: number
 }
 
 function floorsBetween(from: number, to: number): number[] {
@@ -41,6 +47,21 @@ function pageTopFloor(page: number): number {
   return Math.min((page + 1) * VIEWPORT_FLOORS, TOTAL_FLOORS)
 }
 
+const MAX_PAGE = pageForFloor(TOTAL_FLOORS)
+
+/** 编排时默认预览页：若有乘客在其他楼层段等候，自动切到该场景 */
+function defaultPreviewPage(
+  startFloor: number,
+  waiting: Map<number, Passenger[]>,
+): number {
+  for (let f = 1; f <= TOTAL_FLOORS; f++) {
+    if ((waiting.get(f)?.length ?? 0) > 0 && pageForFloor(f) !== pageForFloor(startFloor)) {
+      return pageForFloor(f)
+    }
+  }
+  return pageForFloor(startFloor)
+}
+
 export function Building({
   capacity,
   startFloor,
@@ -49,6 +70,9 @@ export function Building({
   arrivalFlashIds,
   undeliveredIds,
   isRunning = false,
+  followElevator = true,
+  focusFloor = null,
+  levelId,
 }: Props) {
   // 电梯物理目标层
   const targetFloor = step?.floor ?? startFloor
@@ -59,8 +83,22 @@ export function Building({
     return list
   }, [])
 
+  const pageScenes = useMemo(() => {
+    const scenes: { page: number; label: string }[] = []
+    for (let p = 0; p <= MAX_PAGE; p++) {
+      const lo = p * VIEWPORT_FLOORS + 1
+      const hi = pageTopFloor(p)
+      scenes.push({ page: p, label: `${lo}–${hi}F` })
+    }
+    return scenes
+  }, [])
+
   const needsPaging = TOTAL_FLOORS > VIEWPORT_FLOORS
-  const [page, setPage] = useState(() => pageForFloor(targetFloor))
+  const [page, setPage] = useState(() =>
+    followElevator
+      ? pageForFloor(targetFloor)
+      : defaultPreviewPage(startFloor, initialWaiting),
+  )
   const viewportRef = useRef<HTMLDivElement>(null)
   const [floorHeight, setFloorHeight] = useState(72)
 
@@ -84,10 +122,25 @@ export function Building({
     return () => ro.disconnect()
   }, [])
 
+  // 切换关卡：编排模式下跳到有关键乘客的预览页
   useEffect(() => {
+    if (followElevator) return
+    setPage(defaultPreviewPage(startFloor, initialWaiting))
+  }, [levelId, startFloor, initialWaiting, followElevator])
+
+  // 运行时跟随电梯；编排时不强制拉回
+  useEffect(() => {
+    if (!followElevator) return
     const next = pageForFloor(targetFloor)
     setPage((prev) => (prev === next ? prev : next))
-  }, [targetFloor])
+  }, [targetFloor, followElevator])
+
+  // 外部聚焦（点选楼层按钮）
+  useEffect(() => {
+    if (focusFloor == null || focusFloor < 1) return
+    const next = pageForFloor(focusFloor)
+    setPage((prev) => (prev === next ? prev : next))
+  }, [focusFloor])
 
   const facadeHeight = TOTAL_FLOORS * floorHeight
   const scrollY = needsPaging
@@ -179,24 +232,39 @@ export function Building({
     return new Set(step.event.deniedBoarding)
   }, [isArrivalSettled, step])
 
-  const pageLabel = needsPaging
-    ? `${page * VIEWPORT_FLOORS + 1}–${pageTopFloor(page)}F`
-    : null
-
   return (
     <div className="building">
       {needsPaging && (
-        <div className="building__page-bar">
+        <div className="building__page-bar" role="tablist" aria-label="楼层场景切换">
           <button
             type="button"
             className="building__page-btn"
-            disabled={page >= pageForFloor(TOTAL_FLOORS)}
-            onClick={() => setPage((p) => Math.min(p + 1, pageForFloor(TOTAL_FLOORS)))}
+            disabled={page >= MAX_PAGE}
+            onClick={() => setPage((p) => Math.min(p + 1, MAX_PAGE))}
             title="更高楼层"
           >
             ↑
           </button>
-          <span className="building__page-label">{pageLabel}</span>
+
+          <div className="building__page-tabs">
+            {pageScenes.map((scene) => (
+              <button
+                key={scene.page}
+                type="button"
+                role="tab"
+                aria-selected={page === scene.page}
+                className={
+                  'building__page-tab' +
+                  (page === scene.page ? ' building__page-tab--active' : '')
+                }
+                onClick={() => setPage(scene.page)}
+                title={`预览 ${scene.label}`}
+              >
+                {scene.label}
+              </button>
+            ))}
+          </div>
+
           <button
             type="button"
             className="building__page-btn"

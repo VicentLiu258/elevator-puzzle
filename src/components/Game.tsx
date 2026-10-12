@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ALL_PLAYABLE_LEVELS, LEVELS, getLevel } from '../data/levels'
 import { TOTAL_FLOORS } from '../engine/types'
 import type { Passenger } from '../engine/types'
@@ -12,6 +12,8 @@ import { FloorButtons } from './FloorButtons'
 import { HelpModal } from './HelpModal'
 import { LevelSelect } from './LevelSelect'
 import { ResultPanel } from './ResultPanel'
+
+const MAX_LEVEL_ID = LEVELS[LEVELS.length - 1]!.id
 
 function buildInitialWaiting(passengers: Passenger[]): Map<number, Passenger[]> {
   const m = new Map<number, Passenger[]>()
@@ -34,6 +36,9 @@ export function Game() {
   // 示例与求助弹窗状态
   const [showExample, setShowExample] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  /** 编排时点击楼层，驱动大楼场景预览 */
+  const [focusFloor, setFocusFloor] = useState<number | null>(null)
+  const pendingDemoRef = useRef<number[] | null>(null)
 
   const initialWaiting = useMemo(
     () => buildInitialWaiting(level.passengers),
@@ -68,8 +73,17 @@ export function Game() {
     }
   }, [playback.mode, playback.result?.success, level.id, markCleared])
 
+  // 示例演练：等关卡切换完成后再填入指令，避免闭包用到旧关卡
+  useEffect(() => {
+    if (!pendingDemoRef.current) return
+    const cmds = pendingDemoRef.current
+    pendingDemoRef.current = null
+    playback.setCommandList(cmds, true)
+  }, [levelId, playback.setCommandList])
+
   const editing = playback.mode === 'idle'
   const isRunning = playback.mode === 'playing'
+  const followElevator = !editing
 
   const slotHighlight =
     playback.mode === 'finished' && playback.result?.success
@@ -79,23 +93,55 @@ export function Game() {
   const currentFloor = playback.currentStep?.floor ?? level.startFloor
   const occupancy = playback.currentStep?.inElevator.length ?? 0
 
+  const goToLevel = (id: number) => {
+    setShowHelp(false)
+    setShowExample(false)
+    setFocusFloor(null)
+    setLevelId(id)
+  }
+
+  const goToNextLevel = () => {
+    // 示例关结束后进入第 1 关
+    if (level.id === 0) {
+      goToLevel(1)
+      return
+    }
+    const nextId = level.id + 1
+    if (nextId > MAX_LEVEL_ID) return
+    // 确保解锁链完整，再切换
+    markCleared(level.id)
+    goToLevel(nextId)
+  }
+
   // 载入示例关卡并演示
   const handlePlayDemo = (targetLevelId: number, demoCommands: number[]) => {
-    setLevelId(targetLevelId)
-    // 稍微延后让组件与 state 完成对齐后播放
-    window.setTimeout(() => {
+    if (levelId === targetLevelId) {
       playback.setCommandList(demoCommands, true)
-    }, 80)
+      return
+    }
+    pendingDemoRef.current = demoCommands
+    goToLevel(targetLevelId)
   }
 
   // 求助：填入下一步
   const handleApplyNextStep = (floor: number) => {
+    setFocusFloor(floor)
     playback.addFloor(floor)
   }
 
   // 求助：填入最优解
   const handleApplySolution = (solution: number[], autoRun = false) => {
+    if (solution[0] != null) setFocusFloor(solution[0])
     playback.setCommandList(solution, autoRun)
+  }
+
+  const handleFloorPreview = (floor: number) => {
+    setFocusFloor(floor)
+  }
+
+  const handleFloorSelect = (floor: number) => {
+    setFocusFloor(floor)
+    playback.addFloor(floor)
   }
 
   return (
@@ -168,7 +214,7 @@ export function Game() {
           currentId={level.id}
           isCleared={isCleared}
           isUnlocked={isUnlocked}
-          onSelect={setLevelId}
+          onSelect={goToLevel}
         />
         <EventLog text={playback.currentStep?.event.description ?? ''} />
       </header>
@@ -188,6 +234,8 @@ export function Game() {
           </div>
 
           <Building
+            key={level.id}
+            levelId={level.id}
             capacity={level.capacity}
             startFloor={level.startFloor}
             step={playback.currentStep}
@@ -195,6 +243,8 @@ export function Game() {
             arrivalFlashIds={arrivalFlashIds}
             undeliveredIds={undeliveredIds}
             isRunning={isRunning}
+            followElevator={followElevator}
+            focusFloor={focusFloor}
           />
         </div>
 
@@ -231,7 +281,8 @@ export function Game() {
                 <span>呼梯选层</span>
               </div>
               <FloorButtons
-                onSelect={playback.addFloor}
+                onSelect={handleFloorSelect}
+                onPreview={handleFloorPreview}
                 disabled={!editing || playback.commands.length >= level.maxStops}
                 currentFloor={currentFloor}
                 selectedFloors={playback.commands}
@@ -290,11 +341,11 @@ export function Game() {
                   </button>
                   {playback.mode === 'finished' &&
                     playback.result?.success &&
-                    level.id < LEVELS.length && (
+                    (level.id === 0 || level.id < MAX_LEVEL_ID) && (
                       <button
                         type="button"
                         className="btn btn--accent"
-                        onClick={() => setLevelId(level.id + 1)}
+                        onClick={goToNextLevel}
                       >
                         下一关
                       </button>

@@ -12,6 +12,7 @@ export function usePlayback(level: LevelConfig) {
   const [stepIndex, setStepIndex] = useState(0)
   const [mode, setMode] = useState<PlaybackMode>('idle')
   const timerRef = useRef<number | null>(null)
+  const levelIdRef = useRef(level.id)
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -27,11 +28,19 @@ export function usePlayback(level: LevelConfig) {
     setMode('idle')
   }, [clearTimer])
 
-  // 切换关卡时重置
+  // 切换关卡时同步重置，避免沿用上一关的 finished/result 导致「下一关」看似失效
+  if (levelIdRef.current !== level.id) {
+    levelIdRef.current = level.id
+    if (commands.length > 0) setCommands([])
+    if (result !== null) setResult(null)
+    if (stepIndex !== 0) setStepIndex(0)
+    if (mode !== 'idle') setMode('idle')
+  }
+
+  // 关卡变化时清理播放定时器
   useEffect(() => {
-    setCommands([])
-    reset()
-  }, [level.id, reset])
+    clearTimer()
+  }, [level.id, clearTimer])
 
   useEffect(() => () => clearTimer(), [clearTimer])
 
