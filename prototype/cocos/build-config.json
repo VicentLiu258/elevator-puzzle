@@ -1,0 +1,23 @@
+{
+  "name": "ElevatorAgain",
+  "platform": "web-mobile",
+  "buildPath": "project://build",
+  "outputName": "web",
+  "startScene": "fabe3012-5e5a-475f-8e46-12f0991faa23",
+  "scenes": [
+    {
+      "url": "db://assets/scene/main.scene",
+      "uuid": "fabe3012-5e5a-475f-8e46-12f0991faa23"
+    }
+  ],
+  "debug": false,
+  "md5Cache": true,
+  "sourceMaps": false,
+  "packages": {
+    "web-mobile": {
+      "polyfills": {
+        "asyncFunctions": true
+      }
+    }
+  }
+}

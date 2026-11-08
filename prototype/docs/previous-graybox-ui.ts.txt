@@ -1,0 +1,224 @@
+import { _decorator, Component, Node, UITransform, Graphics, Label, Color, Layers, input, Input, EventKeyboard, EventTouch, KeyCode, game, Game, view } from 'cc';
+import { createGame, dispatch, step, type GameState, type Passenger } from './core/game';
+
+const { ccclass } = _decorator;
+const palette = {
+  dark: new Color(36, 48, 54, 255), muted: new Color(102, 112, 109, 255),
+  paper: new Color(247, 243, 225, 255), cream: new Color(233, 224, 197, 255),
+  slot: new Color(221, 211, 183, 255), selected: new Color(246, 197, 103, 255),
+  blue: new Color(76, 128, 144, 255), orange: new Color(212, 120, 67, 255),
+  danger: new Color(162, 78, 58, 255), white: new Color(255, 255, 248, 255),
+};
+
+type Box = { node: Node; label: Label; graphics: Graphics; w: number; h: number };
+
+/** A deliberately simple, touch-first vertical slice. All rules live in core/game. */
+@ccclass('PrototypeUI')
+export class PrototypeUI extends Component {
+  private state: GameState = createGame();
+  private content!: Node;
+  private selection: { id: string; origin: 'queue' | 'cabin' } | null = null;
+  private queueBoxes: Box[] = [];
+  private slotBoxes: Box[] = [];
+  private status!: Label;
+  private detail!: Label;
+  private notice!: Label;
+  private closeBox!: Box;
+  private reopenBox!: Box;
+  private removeBox!: Box;
+  private leftBox!: Box;
+  private rightBox!: Box;
+  private pauseBox!: Box;
+  private resultBox!: Box;
+  private paused = false;
+  private leftKey = false;
+  private rightKey = false;
+  private leftTouches = new Set<number>();
+  private rightTouches = new Set<number>();
+  private drag: { touchId: number; id: string; origin: 'queue' | 'cabin' } | null = null;
+  private refreshIn = 0;
+
+  start() {
+    this.node.layer = Layers.Enum.UI_2D;
+    this.content = new Node('GameContent'); this.content.layer = Layers.Enum.UI_2D; this.content.parent = this.node;
+    this.content.addComponent(UITransform).setContentSize(720, 1280);
+    this.build();
+    input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
+    input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
+    input.on(Input.EventType.TOUCH_END, this.onDragEnd, this);
+    input.on(Input.EventType.TOUCH_CANCEL, this.onDragCancel, this);
+    game.on(Game.EVENT_HIDE, this.onHide, this);
+    this.refresh();
+  }
+
+  onDestroy() {
+    input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
+    input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
+    input.off(Input.EventType.TOUCH_END, this.onDragEnd, this);
+    input.off(Input.EventType.TOUCH_CANCEL, this.onDragCancel, this);
+    game.off(Game.EVENT_HIDE, this.onHide, this);
+  }
+
+  update(dt: number) {
+    const size = view.getVisibleSize();
+    const scale = Math.min(size.width / 720, size.height / 1280);
+    this.content.setScale(scale, scale, 1);
+    if (this.paused) return;
+    const left = this.leftKey || this.leftTouches.size > 0;
+    const right = this.rightKey || this.rightTouches.size > 0;
+    const direction = left === right ? 0 : left ? -1 : 1;
+    this.state = step(this.state, Math.min(dt, 0.1), direction);
+    this.refreshIn -= dt;
+    if (this.refreshIn <= 0) { this.refreshIn = 0.1; this.refresh(); }
+  }
+
+  private onKeyDown(event: EventKeyboard) {
+    if (event.keyCode === KeyCode.KEY_A) this.leftKey = true;
+    if (event.keyCode === KeyCode.KEY_D) this.rightKey = true;
+  }
+  private onKeyUp(event: EventKeyboard) {
+    if (event.keyCode === KeyCode.KEY_A) this.leftKey = false;
+    if (event.keyCode === KeyCode.KEY_D) this.rightKey = false;
+  }
+  private clearInput() { this.leftKey = this.rightKey = false; this.leftTouches.clear(); this.rightTouches.clear(); this.drag = null; }
+  private onHide() { this.paused = true; this.clearInput(); this.refresh(); }
+
+  private rectangle(x: number, y: number, w: number, h: number, fill: Color, text = '', size = 24): Box {
+    const node = new Node('box'); node.layer = Layers.Enum.UI_2D; node.parent = this.content; node.setPosition(x, y);
+    node.addComponent(UITransform).setContentSize(w, h);
+    const graphics = node.addComponent(Graphics);
+    const labelNode = new Node('label'); labelNode.layer = Layers.Enum.UI_2D; labelNode.parent = node;
+    labelNode.addComponent(UITransform).setContentSize(w - 12, h - 8);
+    const label = labelNode.addComponent(Label); label.string = text; label.fontSize = size; label.lineHeight = size + 7;
+    label.color = palette.dark; label.overflow = Label.Overflow.SHRINK;
+    const box = { node, label, graphics, w, h }; this.paint(box, fill); return box;
+  }
+  private paint(box: Box, fill: Color) {
+    box.graphics.clear(); box.graphics.fillColor = fill;
+    box.graphics.roundRect(-box.w / 2, -box.h / 2, box.w, box.h, 12); box.graphics.fill();
+  }
+  private text(x: number, y: number, w: number, h: number, content: string, size = 24, color = palette.dark): Label {
+    const node = new Node('text'); node.layer = Layers.Enum.UI_2D; node.parent = this.content; node.setPosition(x, y);
+    node.addComponent(UITransform).setContentSize(w, h);
+    const label = node.addComponent(Label); label.string = content; label.fontSize = size; label.lineHeight = size + 8;
+    label.color = color; label.overflow = Label.Overflow.SHRINK; return label;
+  }
+  private click(box: Box, handler: () => void) { box.node.on(Node.EventType.TOUCH_END, handler, this); }
+
+  private build() {
+    this.rectangle(0, 0, 720, 1280, palette.paper);
+    this.text(0, 590, 650, 50, '电梯再等一个', 38);
+    this.status = this.text(0, 520, 670, 100, '', 25);
+    this.pauseBox = this.rectangle(285, 592, 104, 56, palette.cream, '暂停', 22);
+    this.click(this.pauseBox, () => { this.paused = !this.paused; this.clearInput(); this.refresh(); });
+    this.text(0, 437, 650, 40, '轿厢站位  ·  点选乘客后点格子', 24, palette.muted);
+    this.rectangle(0, 238, 630, 350, palette.cream);
+    for (let index = 0; index < 6; index++) {
+      const x = (index % 3 - 1) * 196; const y = index < 3 ? 310 : 157;
+      const box = this.rectangle(x, y, 178, 132, palette.slot, '', 22);
+      this.slotBoxes.push(box); this.click(box, () => this.selectSlot(index));
+      box.node.on(Node.EventType.TOUCH_START, (event: EventTouch) => {
+        const occupied = this.state.aboard.find(a => index >= a.slot && index < a.slot + a.passenger.size);
+        if (occupied) this.startDrag(event, occupied.passenger.id, 'cabin');
+      });
+      box.node.on(Node.EventType.TOUCH_CANCEL, this.onDragEnd, this);
+    }
+    this.detail = this.text(0, 16, 650, 84, '点击候梯乘客查看信息', 23);
+    this.removeBox = this.rectangle(255, -53, 140, 60, palette.cream, '请下车', 22);
+    this.click(this.removeBox, () => {
+      if (this.paused || this.selection?.origin !== 'cabin') return;
+      this.state = dispatch(this.state, { type: 'remove', passengerId: this.selection.id }); this.selection = null; this.refresh();
+    });
+    this.text(-160, -130, 330, 42, '候梯队列', 26);
+    for (let index = 0; index < 5; index++) {
+      const box = this.rectangle((index - 2) * 130, -217, 120, 125, palette.cream, '', 19);
+      this.queueBoxes.push(box); this.click(box, () => this.selectQueue(index));
+      box.node.on(Node.EventType.TOUCH_START, (event: EventTouch) => {
+        const passenger = this.state.queue[index];
+        if (passenger) this.startDrag(event, passenger.id, 'queue');
+      });
+      box.node.on(Node.EventType.TOUCH_CANCEL, this.onDragEnd, this);
+    }
+    this.notice = this.text(0, -328, 670, 76, '', 22, palette.muted);
+    this.closeBox = this.rectangle(-150, -423, 286, 78, palette.orange, '关门出发', 27);
+    this.reopenBox = this.rectangle(150, -423, 286, 78, palette.blue, '重新开门', 27);
+    this.closeBox.label.color = this.reopenBox.label.color = palette.white;
+    this.click(this.closeBox, () => { if (!this.paused) { this.state = dispatch(this.state, { type: 'close' }); this.selection = null; this.refresh(); } });
+    this.click(this.reopenBox, () => { if (!this.paused) { this.state = dispatch(this.state, { type: 'reopen' }); this.refresh(); } });
+    this.leftBox = this.rectangle(-150, -529, 286, 86, palette.blue, '◀ 向左扶稳  A', 24);
+    this.rightBox = this.rectangle(150, -529, 286, 86, palette.blue, '向右扶稳  D ▶', 24);
+    this.leftBox.label.color = this.rightBox.label.color = palette.white;
+    this.hold(this.leftBox, this.leftTouches); this.hold(this.rightBox, this.rightTouches);
+    this.resultBox = this.rectangle(0, 0, 600, 330, palette.white, '', 28);
+    this.resultBox.node.active = false;
+    this.click(this.resultBox, () => { if (this.state.phase === 'result') { this.state = createGame(); this.selection = null; this.clearInput(); this.refresh(); } });
+  }
+
+  private hold(box: Box, touches: Set<number>) {
+    box.node.on(Node.EventType.TOUCH_START, (event: any) => { if (!this.paused) touches.add(event.getID()); });
+    const end = (event: any) => { touches.delete(event.getID()); };
+    box.node.on(Node.EventType.TOUCH_END, end); box.node.on(Node.EventType.TOUCH_CANCEL, end);
+  }
+  private startDrag(event: EventTouch, id: string, origin: 'queue' | 'cabin') {
+    if (!this.paused && this.state.phase === 'loading' && !this.drag) this.drag = { touchId: event.getID(), id, origin };
+  }
+  private onDragEnd(event: EventTouch) {
+    if (!this.drag || event.getID() !== this.drag.touchId) return;
+    const drag = this.drag; this.drag = null;
+    if (this.paused || this.state.phase !== 'loading') return;
+    const position = event.getLocation();
+    const index = this.slotBoxes.findIndex(box => box.node.getComponent(UITransform)?.hitTest(position));
+    if (index < 0) return;
+    // A tap on the origin is handled by the normal selection handler.
+    if (drag.origin === 'cabin' && this.state.aboard.some(a => a.passenger.id === drag.id && index >= a.slot && index < a.slot + a.passenger.size)) return;
+    this.selection = { id: drag.id, origin: drag.origin }; this.selectSlot(index);
+  }
+  private onDragCancel(event: EventTouch) { if (this.drag?.touchId === event.getID()) this.drag = null; }
+  private selectQueue(index: number) {
+    if (this.paused || this.state.phase !== 'loading') return;
+    const p = this.state.queue[index]; if (!p) return;
+    this.selection = { id: p.id, origin: 'queue' }; this.refresh();
+  }
+  private selectSlot(index: number) {
+    if (this.paused || this.state.phase !== 'loading') return;
+    if (this.selection) {
+      const { id, origin } = this.selection;
+      const previous = this.state;
+      this.state = dispatch(this.state, origin === 'queue' ? { type: 'board', passengerId: id, slot: index } : { type: 'move', passengerId: id, slot: index });
+      // Keep selection on invalid actions so the player can try a different position.
+      if (this.state !== previous && this.state.aboard.some(a => a.passenger.id === id && a.slot === index)) this.selection = null;
+    } else {
+      const occupied = this.state.aboard.find(a => index >= a.slot && index < a.slot + a.passenger.size);
+      if (occupied) this.selection = { id: occupied.passenger.id, origin: 'cabin' };
+    }
+    this.refresh();
+  }
+  private passengerText(p: Passenger) { return `${p.name} · ${p.mass}kg · ${p.size}格 · ¥${p.fare}\n${p.trait} · 耐心 ${Math.ceil(p.patience)}秒`; }
+  private refresh() {
+    if (!this.status) return;
+    const s = this.state;
+    const phases: Record<string, string> = { loading: '等待上客', closing: '关门倒计时', opening: '正在开门', travel: '行进中', result: '本趟结算' };
+    this.status.string = `剩余营业时间 ${Math.ceil(s.timeLeft)}秒   ·   第 1 趟\n${phases[s.phase]}   载重 ${Math.round(s.mass)} / 450kg   ·   偏载 ${Math.round(s.balance * 100)}%\n侧倾 ${s.tilt.toFixed(1)}°   ·   负荷 ${Math.round(s.load)}%   ·   进度 ${Math.round(s.progress * 100)}%`;
+    this.pauseBox.label.string = this.paused ? '继续' : '暂停';
+    this.queueBoxes.forEach((box, i) => {
+      const p = s.queue[i]; box.node.active = !!p;
+      if (p) { box.label.string = `${p.name}\n${p.mass}kg · ¥${p.fare}\n${p.size}格`; this.paint(box, this.selection?.id === p.id ? palette.selected : palette.cream); }
+    });
+    this.slotBoxes.forEach((box, i) => {
+      const occupant = s.aboard.find(a => i >= a.slot && i < a.slot + a.passenger.size);
+      box.label.string = occupant ? `${occupant.passenger.name}\n${occupant.passenger.mass}kg\n${occupant.passenger.size === 2 ? '两格货物' : '已上车'}` : `空位 ${i + 1}`;
+      this.paint(box, occupant && this.selection?.id === occupant.passenger.id ? palette.selected : occupant ? palette.blue : palette.slot);
+      box.label.color = occupant && this.selection?.id !== occupant.passenger.id ? palette.white : palette.dark;
+    });
+    const selected = this.selection && (s.queue.find(p => p.id === this.selection!.id) || s.aboard.find(a => a.passenger.id === this.selection!.id)?.passenger);
+    if (!selected) this.selection = null;
+    this.detail.string = selected ? this.passengerText(selected) : '点选候梯乘客，再点空位上车；点已上车乘客可换位或请下车';
+    this.removeBox.node.active = this.selection?.origin === 'cabin' && s.phase === 'loading';
+    this.closeBox.node.active = s.phase === 'loading';
+    this.reopenBox.node.active = s.phase === 'closing';
+    this.leftBox.node.active = this.rightBox.node.active = s.phase === 'travel';
+    this.notice.string = this.paused ? '已暂停，点右上角继续' : `${s.message || ''}\n虚构街机规则：300kg 以上吃力，超过 450kg 禁止发车`;
+    this.resultBox.node.active = s.phase === 'result';
+    if (s.phase === 'result' && s.result) this.resultBox.label.string = `${s.message}\n\n票款 ¥${s.result.fares} + 奖励 ¥${s.result.bonus} − 维护 ¥${s.result.maintenance}\n净收入 ¥${s.result.net}\n\n点击这里再试一次`;
+  }
+}

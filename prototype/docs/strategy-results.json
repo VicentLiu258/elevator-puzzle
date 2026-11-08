@@ -1,0 +1,272 @@
+[
+  {
+    "trip": 1,
+    "title": "第一班，慢慢来",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 37,
+        "seconds": 11.03,
+        "mass": 155,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 37,
+        "seconds": 16.03,
+        "mass": 155,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 33,
+        "seconds": 21.03,
+        "mass": 155,
+        "emergency": false
+      }
+    ]
+  },
+  {
+    "trip": 2,
+    "title": "等人还是赶时间",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 49,
+        "seconds": 12.03,
+        "mass": 120,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 28,
+        "seconds": 17.03,
+        "mass": 120,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 58,
+        "seconds": 22.03,
+        "mass": 250,
+        "emergency": false
+      }
+    ]
+  },
+  {
+    "trip": 3,
+    "title": "两边都照顾到",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 38,
+        "seconds": 14.03,
+        "mass": 145,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 62,
+        "seconds": 19.03,
+        "mass": 265,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 70,
+        "seconds": 27.55,
+        "mass": 355,
+        "emergency": false
+      }
+    ]
+  },
+  {
+    "trip": 4,
+    "title": "纸箱也要一个位置",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 48,
+        "seconds": 13.03,
+        "mass": 175,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 70,
+        "seconds": 18.03,
+        "mass": 270,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 86,
+        "seconds": 28.63,
+        "mass": 400,
+        "emergency": false
+      }
+    ]
+  },
+  {
+    "trip": 5,
+    "title": "电机也会累",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 51,
+        "seconds": 18.03,
+        "mass": 175,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 69,
+        "seconds": 23.03,
+        "mass": 265,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 30,
+        "seconds": 39.27,
+        "mass": 430,
+        "emergency": true
+      }
+    ]
+  },
+  {
+    "trip": 6,
+    "title": "扶稳，别慌",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 39,
+        "seconds": 15.02,
+        "mass": 145,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 57,
+        "seconds": 20.02,
+        "mass": 235,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 63,
+        "seconds": 25.02,
+        "mass": 300,
+        "emergency": false
+      }
+    ]
+  },
+  {
+    "trip": 7,
+    "title": "午高峰争分夺秒",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 59,
+        "seconds": 12.03,
+        "mass": 140,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 32,
+        "seconds": 17.03,
+        "mass": 140,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 76,
+        "seconds": 24.9,
+        "mass": 360,
+        "emergency": false
+      }
+    ]
+  },
+  {
+    "trip": 8,
+    "title": "就差最后这一位",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 29,
+        "seconds": 11.03,
+        "mass": 110,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 47,
+        "seconds": 16.03,
+        "mass": 200,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 65,
+        "seconds": 21.03,
+        "mass": 275,
+        "emergency": false
+      }
+    ]
+  },
+  {
+    "trip": 9,
+    "title": "行李摆哪边",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 49,
+        "seconds": 18.03,
+        "mass": 180,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 69,
+        "seconds": 23.03,
+        "mass": 280,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 78,
+        "seconds": 37.63,
+        "mass": 400,
+        "emergency": false
+      }
+    ]
+  },
+  {
+    "trip": 10,
+    "title": "最后一班，收工",
+    "results": [
+      {
+        "name": "轻载快转",
+        "net": 55,
+        "seconds": 17.03,
+        "mass": 175,
+        "emergency": false
+      },
+      {
+        "name": "均衡满载",
+        "net": 83,
+        "seconds": 22.03,
+        "mass": 295,
+        "emergency": false
+      },
+      {
+        "name": "过载贪心",
+        "net": 82,
+        "seconds": 35.38,
+        "mass": 395,
+        "emergency": false
+      }
+    ]
+  }
+]

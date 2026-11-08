@@ -54,12 +54,22 @@ function defaultPreviewPage(
   startFloor: number,
   waiting: Map<number, Passenger[]>,
 ): number {
+  const startPage = pageForFloor(startFloor)
   for (let f = 1; f <= TOTAL_FLOORS; f++) {
-    if ((waiting.get(f)?.length ?? 0) > 0 && pageForFloor(f) !== pageForFloor(startFloor)) {
-      return pageForFloor(f)
-    }
+    const passengers = waiting.get(f) ?? []
+    if (passengers.length === 0) continue
+
+    const originPage = pageForFloor(f)
+    if (originPage !== startPage) return originPage
+
+    // 起点可能在当前场景，但目的楼层在别的场景（如 1F → 8F）；
+    // 默认展示相关的高区，方便玩家运行前检查目的地。
+    const destinationPage = passengers
+      .map((passenger) => pageForFloor(passenger.to))
+      .find((candidate) => candidate !== startPage)
+    if (destinationPage != null) return destinationPage
   }
-  return pageForFloor(startFloor)
+  return startPage
 }
 
 export function Building({

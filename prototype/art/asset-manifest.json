@@ -1,0 +1,19 @@
+{
+  "generator": "Blender Python / original procedural modelling",
+  "blender": "5.2.2 LTS",
+  "style": "Warm apartment / collectible vinyl dolls",
+  "coordinates": "Blender Z up, -Y front; FBX export Y up, -Z forward",
+  "animation": "Articulated limb nodes with hip/shoulder origins; runtime walk, turn, settle; not skeletal clips",
+  "triangles": {
+    "student": 17596,
+    "office": 18620,
+    "courier": 18504,
+    "traveller": 20160,
+    "mover": 18996,
+    "coach": 17616,
+    "cabin": 8204,
+    "door": 1316,
+    "cargo": 1128
+  },
+  "sample": false
+}

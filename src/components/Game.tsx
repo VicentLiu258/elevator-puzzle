@@ -105,6 +105,7 @@ export function Game() {
     setShowHelp(false)
     setShowExample(false)
     setFocusRequest(null)
+    if (id !== levelId) playback.resetForLevelChange()
     setLevelId(id)
   }
 

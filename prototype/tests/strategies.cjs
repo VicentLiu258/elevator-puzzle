@@ -1,0 +1,7 @@
+const {createGame,dispatch,step,measure,legalSlot,TRIPS}=require(process.argv[2]);
+function bestLayout(people){let best=null;function visit(i,a){if(i===people.length){const b=Math.abs(measure(a).balance);if(!best||b<best.bias)best={bias:b,a};return;}for(let slot=0;slot<6;slot++)if(legalSlot(slot,people[i].size,a))visit(i+1,[...a,{passenger:people[i],slot}]);}visit(0,[]);return best;}
+const policies=[['轻载快转',180,0],['均衡满载',300,5],['过载贪心',450,10]];
+const rows=TRIPS.map((c,index)=>{return {trip:index+1,title:c.title,results:policies.map(([name,cap,wait])=>{let s=createGame(42);while(s.tripIndex<index){s=dispatch(s,{type:'close'});while(!['result','ended'].includes(s.phase))s=step(s,1/60);s=dispatch(s,{type:'next'});}s.timeLeft=270;s=dispatch(s,{type:'begin'});for(let t=0;t<wait*60;t++)s=step(s,1/60);
+const q=s.queue;let chosen=[],score=-1;for(let mask=0;mask<(1<<q.length);mask++){const p=q.filter((_,i)=>mask&(1<<i));if(p.reduce((v,p)=>v+p.mass,0)>cap)continue;const layout=bestLayout(p);const fare=p.reduce((v,p)=>v+p.fare,0);if(layout&&fare>score){score=fare;chosen=layout.a;}}
+for(const a of chosen)s=dispatch(s,{type:'board',passengerId:a.passenger.id,slot:a.slot});s=dispatch(s,{type:'close'});while(!['result','ended'].includes(s.phase))s=step(s,1/60,s.balance>.05?-1:s.balance<-.05?1:0);return{name,net:s.result.net,seconds:+s.result.duration.toFixed(2),mass:s.result.mass,emergency:s.result.emergency};})};});
+console.log(JSON.stringify(rows,null,2));

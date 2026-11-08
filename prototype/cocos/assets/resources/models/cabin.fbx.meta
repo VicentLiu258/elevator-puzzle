@@ -1,0 +1,181 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a",
+  "files": [],
+  "subMetas": {
+    "822ba": {
+      "importer": "gltf-mesh",
+      "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@822ba",
+      "displayName": "",
+      "id": "822ba",
+      "name": "Cube.073.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 8204
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "ad0bb": {
+      "importer": "gltf-material",
+      "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@ad0bb",
+      "displayName": "",
+      "id": "ad0bb",
+      "name": "trim.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "ba6c0": {
+      "importer": "gltf-material",
+      "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@ba6c0",
+      "displayName": "",
+      "id": "ba6c0",
+      "name": "floor.material",
+      "userData": {
+        "gltfIndex": 1
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "e2f03": {
+      "importer": "gltf-material",
+      "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@e2f03",
+      "displayName": "",
+      "id": "e2f03",
+      "name": "tile.material",
+      "userData": {
+        "gltfIndex": 2
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "7d412": {
+      "importer": "gltf-material",
+      "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@7d412",
+      "displayName": "",
+      "id": "7d412",
+      "name": "wall.material",
+      "userData": {
+        "gltfIndex": 3
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "438ea": {
+      "importer": "gltf-material",
+      "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@438ea",
+      "displayName": "",
+      "id": "438ea",
+      "name": "brass.material",
+      "userData": {
+        "gltfIndex": 4
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "c75fc": {
+      "importer": "gltf-material",
+      "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@c75fc",
+      "displayName": "",
+      "id": "c75fc",
+      "name": "light.material",
+      "userData": {
+        "gltfIndex": 5
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "bcb85": {
+      "importer": "gltf-scene",
+      "uuid": "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@bcb85",
+      "displayName": "",
+      "id": "bcb85",
+      "name": "cabin.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@822ba"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@ad0bb",
+        "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@ba6c0",
+        "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@e2f03",
+        "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@7d412",
+        "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@438ea",
+        "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@c75fc"
+      ],
+      "scenes": [
+        "aacc9101-6f92-4055-ba25-ad4ec06b6a4a@bcb85"
+      ]
+    }
+  }
+}
