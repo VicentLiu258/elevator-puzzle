@@ -4,14 +4,51 @@ interface Props {
   success: boolean
   failureInfo?: FailureInfo
   onOpenHelp?: () => void
+  /** 本次通关获得的星级 1-3，仅在 success 时有效 */
+  stars?: 1 | 2 | 3
+  /** 本次实际停靠数 */
+  stopsUsed?: number
+  /** 最优停靠数 */
+  optimalStops?: number
 }
 
-export function ResultPanel({ success, failureInfo, onOpenHelp }: Props) {
+function StarDisplay({ stars }: { stars: 1 | 2 | 3 }) {
+  return (
+    <span className="result-stars" aria-label={`${stars} 星`}>
+      {[1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={`result-star ${i <= stars ? 'result-star--lit' : 'result-star--dim'}`}
+          style={{ animationDelay: `${(i - 1) * 0.25}s` }}
+        >
+          ★
+        </span>
+      ))}
+    </span>
+  )
+}
+
+export function ResultPanel({
+  success,
+  failureInfo,
+  onOpenHelp,
+  stars,
+  stopsUsed,
+  optimalStops,
+}: Props) {
   if (success) {
     return (
       <div className="result result--success" role="alert">
+        {stars && <StarDisplay stars={stars} />}
         <strong>全部送达 🎉</strong>
-        <span>所有乘客都到了目的楼层！</span>
+        {stopsUsed != null && optimalStops != null && (
+          <span className="result__stats">
+            本次 {stopsUsed} 步 / 最优 {optimalStops} 步
+          </span>
+        )}
+        {stars != null && stars < 3 && (
+          <span className="result__hint">还能更少步数通关！</span>
+        )}
       </div>
     )
   }

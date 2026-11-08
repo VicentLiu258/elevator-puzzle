@@ -125,6 +125,34 @@ function snapshotStep(
   }
 }
 
+/** 收集所有波次的全部乘客 */
+function allPassengers(level: LevelConfig): Passenger[] {
+  if (!level.waves || level.waves.length === 0) return level.passengers
+  return level.waves.flat()
+}
+
+/** 检查某一波乘客是否全部送达 */
+function isWaveDelivered(wave: Passenger[], arrived: Map<number, Passenger[]>): boolean {
+  const arrivedIds = new Set<string>()
+  for (const [, list] of arrived) {
+    for (const p of list) arrivedIds.add(p.id)
+  }
+  return wave.every((p) => arrivedIds.has(p.id))
+}
+
+/** 注入新波次乘客到等候队列 */
+function injectWave(wave: Passenger[], waiting: Map<number, Passenger[]>): void {
+  for (const p of wave) {
+    const queue = waiting.get(p.from)
+    if (queue) {
+      queue.push(p)
+      queue.sort((a, b) => a.queueOrder - b.queueOrder)
+    } else {
+      waiting.set(p.from, [p])
+    }
+  }
+}
+
 /**
  * 纯函数模拟：输入关卡与指令序列，输出逐步状态。
  *
@@ -136,18 +164,35 @@ function snapshotStep(
  * 5. 停靠楼层与当前楼层相同，仍算一次停靠并执行上下客。
  * 6. 成功：全部指令执行完后，每名乘客都在自己的目的楼层。
  * 7. 一旦乘客到达目的楼层，就不再上车。
+ * 8. 多波次：当前波乘客全部送达后，下一波乘客出现在起点楼层。
  */
 export function simulate(level: LevelConfig, commands: number[]): SimResult {
   if (commands.length > level.maxStops) {
     throw new Error(`指令长度 ${commands.length} 超过停靠上限 ${level.maxStops}`)
   }
 
-  const waiting = buildWaiting(level.passengers)
+  const waves = level.waves && level.waves.length > 0 ? level.waves : [level.passengers]
+  const allPax = allPassengers(level)
+  let currentWaveIndex = 0
+
+  const waiting = buildWaiting(waves[0]!)
   const arrived = emptyFloorMap<Passenger>()
   let floor = level.startFloor
   let inElevator: Passenger[] = []
   const steps: SimStep[] = []
   const deniedEvents: DeniedEvent[] = []
+
+  /** 检查并注入后续波次 */
+  const tryAdvanceWave = (): string | null => {
+    let waveMsg: string | null = null
+    while (currentWaveIndex < waves.length - 1) {
+      if (!isWaveDelivered(waves[currentWaveIndex]!, arrived)) break
+      currentWaveIndex++
+      injectWave(waves[currentWaveIndex]!, waiting)
+      waveMsg = `🚶 第 ${currentWaveIndex + 1} 波乘客到达！`
+    }
+    return waveMsg
+  }
 
   // —— 初始上客（不计入停靠次数）——
   {
@@ -183,7 +228,6 @@ export function simulate(level: LevelConfig, commands: number[]): SimResult {
   // —— 依次执行玩家指令 ——
   for (let i = 0; i < commands.length; i++) {
     const target = commands[i]!
-    // 移动到目标楼层（即使相同也算一次停靠）
     floor = target
 
     const { alighted, nextInElevator: afterAlight } = alightAtFloor(
@@ -193,6 +237,9 @@ export function simulate(level: LevelConfig, commands: number[]): SimResult {
     )
     inElevator = afterAlight
 
+    // 下客后检查波次推进（新乘客出现在等候队列）
+    const waveMsg = tryAdvanceWave()
+
     const { boarded, denied, nextInElevator } = boardAtFloor(
       floor,
       level.capacity,
@@ -201,18 +248,19 @@ export function simulate(level: LevelConfig, commands: number[]): SimResult {
     )
     inElevator = nextInElevator
 
-    const stepIndex = i + 1 // 步骤编号：初始为 0，第一次停靠为 1
+    const stepIndex = i + 1
     for (const p of denied) {
       deniedEvents.push({ step: stepIndex, passenger: p, floor })
     }
 
+    const prefix = waveMsg ? `${waveMsg} ` : undefined
     steps.push(
       snapshotStep(
         floor,
         inElevator,
         waiting,
         arrived,
-        makeEvent(floor, alighted, boarded, denied, inElevator.length, level.capacity),
+        makeEvent(floor, alighted, boarded, denied, inElevator.length, level.capacity, prefix),
       ),
     )
   }
@@ -224,7 +272,7 @@ export function simulate(level: LevelConfig, commands: number[]): SimResult {
       arrivedIds.add(p.id)
     }
   }
-  const success = level.passengers.every((p) => arrivedIds.has(p.id))
+  const success = allPax.every((p) => arrivedIds.has(p.id))
 
   if (success) {
     return { steps, success: true }
@@ -232,7 +280,7 @@ export function simulate(level: LevelConfig, commands: number[]): SimResult {
 
   // 失败：指出没送达的乘客、所在楼层、满员未上车记录
   const undelivered: UndeliveredInfo[] = []
-  for (const p of level.passengers) {
+  for (const p of allPax) {
     if (arrivedIds.has(p.id)) continue
     if (inElevator.some((e) => e.id === p.id)) {
       undelivered.push({ passenger: p, currentFloor: floor })

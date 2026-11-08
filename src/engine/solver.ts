@@ -19,6 +19,8 @@ interface SearchState {
   waitingKey: string
   /** 已送达乘客 id 集合 key */
   arrivedKey: string
+  /** 当前激活波次索引 */
+  waveIndex: number
   stopsUsed: number
   path: number[]
   inElevator: Passenger[]
@@ -66,27 +68,50 @@ function buildInitialWaiting(passengers: Passenger[]): Map<number, Passenger[]> 
   return waiting
 }
 
-/** 在某层执行一次停靠：先下后上 */
-function applyStop(
-  floor: number,
-  capacity: number,
-  inElevator: Passenger[],
-  waiting: Map<number, Passenger[]>,
-  arrived: Set<string>,
-): { inElevator: Passenger[]; waiting: Map<number, Passenger[]>; arrived: Set<string> } {
-  const nextWaiting = cloneWaiting(waiting)
-  const nextArrived = new Set(arrived)
+/** 注入新波次乘客到等候队列 */
+function injectWave(wave: Passenger[], waiting: Map<number, Passenger[]>): void {
+  for (const p of wave) {
+    const queue = waiting.get(p.from)
+    if (queue) {
+      queue.push(p)
+      queue.sort((a, b) => a.queueOrder - b.queueOrder)
+    } else {
+      waiting.set(p.from, [p])
+    }
+  }
+}
 
-  // 下客
-  let nextIn = inElevator.filter((p) => {
+/** 检查某波乘客是否全部送达 */
+function isWaveDelivered(wave: Passenger[], arrived: Set<string>): boolean {
+  return wave.every((p) => arrived.has(p.id))
+}
+
+/** 下客：目的地等于该层的乘客下车 */
+function applyAlight(
+  floor: number,
+  inElevator: Passenger[],
+  arrived: Set<string>,
+): { inElevator: Passenger[]; arrived: Set<string> } {
+  const nextArrived = new Set(arrived)
+  const nextIn = inElevator.filter((p) => {
     if (p.to === floor) {
       nextArrived.add(p.id)
       return false
     }
     return true
   })
+  return { inElevator: nextIn, arrived: nextArrived }
+}
 
-  // 上客
+/** 上客：按排队顺序上车直到满员 */
+function applyBoard(
+  floor: number,
+  capacity: number,
+  inElevator: Passenger[],
+  waiting: Map<number, Passenger[]>,
+): { inElevator: Passenger[]; waiting: Map<number, Passenger[]> } {
+  const nextWaiting = cloneWaiting(waiting)
+  let nextIn = [...inElevator]
   const queue = [...(nextWaiting.get(floor) ?? [])]
   const remain: Passenger[] = []
   for (const p of queue) {
@@ -97,8 +122,58 @@ function applyStop(
     }
   }
   nextWaiting.set(floor, remain)
+  return { inElevator: nextIn, waiting: nextWaiting }
+}
 
-  return { inElevator: nextIn, waiting: nextWaiting, arrived: nextArrived }
+/**
+ * 下客后检查波次推进，注入后续波乘客到 waiting。
+ * 返回推进后的 waveIndex。
+ */
+function advanceWaves(
+  waves: Passenger[][],
+  waveIndex: number,
+  waiting: Map<number, Passenger[]>,
+  arrived: Set<string>,
+): number {
+  let wi = waveIndex
+  while (wi < waves.length - 1) {
+    if (!isWaveDelivered(waves[wi]!, arrived)) break
+    wi++
+    injectWave(waves[wi]!, waiting)
+  }
+  return wi
+}
+
+/**
+ * 完整停靠：下客 → 波次推进 → 上客（与 simulate.ts 一致）
+ */
+function applyFullStop(
+  floor: number,
+  capacity: number,
+  inElevator: Passenger[],
+  waiting: Map<number, Passenger[]>,
+  arrived: Set<string>,
+  waves: Passenger[][],
+  waveIndex: number,
+): {
+  inElevator: Passenger[]
+  waiting: Map<number, Passenger[]>
+  arrived: Set<string>
+  waveIndex: number
+} {
+  // 1. 下客
+  const alight = applyAlight(floor, inElevator, arrived)
+  // 2. 波次推进（下客后、上客前）
+  const clonedWaiting = cloneWaiting(waiting)
+  const newWaveIndex = advanceWaves(waves, waveIndex, clonedWaiting, alight.arrived)
+  // 3. 上客
+  const board = applyBoard(floor, capacity, alight.inElevator, clonedWaiting)
+  return {
+    inElevator: board.inElevator,
+    waiting: board.waiting,
+    arrived: alight.arrived,
+    waveIndex: newWaveIndex,
+  }
 }
 
 /** 从起始楼层开始看指令序列是否发生方向改变（折返） */
@@ -117,7 +192,7 @@ function hasDirectionChange(path: number[], startFloor: number): boolean {
 
 /**
  * BFS 搜索最少停靠序列。
- * 状态：(电梯楼层, 车上乘客, 等候乘客, 已送达, 已用停靠数)
+ * 状态：(电梯楼层, 车上乘客, 等候乘客, 已送达, 当前波次, 已用停靠数)
  */
 export function solve(
   level: LevelConfig,
@@ -125,49 +200,46 @@ export function solve(
 ): SolveResult {
   const maxSolutions = options?.maxSolutions ?? 20
   const searchLimit = options?.searchLimit ?? level.maxStops + 8
-  const total = level.passengers.length
 
-  // 只搜乘客出发/目的楼层：停靠空层不会上下客，可剪枝
+  const waves = level.waves && level.waves.length > 0 ? level.waves : [level.passengers]
+  const allPax = waves.flat()
+  const total = allPax.length
+
+  // 只搜乘客出发/目的楼层 + 起始层
   const relevant = new Set<number>()
-  for (const p of level.passengers) {
+  for (const p of allPax) {
     relevant.add(p.from)
     relevant.add(p.to)
   }
-  // 起始层也可能需要再次停靠（重复停靠规则）
   relevant.add(level.startFloor)
   const searchFloors = [...relevant].sort((a, b) => a - b)
 
-  const waiting0 = buildInitialWaiting(level.passengers)
-  // 初始上客（不计入停靠）
-  const init = applyStop(
-    level.startFloor,
-    level.capacity,
-    [],
-    waiting0,
-    new Set(),
-  )
+  const waiting0 = buildInitialWaiting(waves[0]!)
+  // 初始上客（不计入停靠）——只做上客，不走 alight→wave→board 全流程
+  const initBoard = applyBoard(level.startFloor, level.capacity, [], waiting0)
+  const initArrived = new Set<string>()
+  const initWaveIndex = advanceWaves(waves, 0, initBoard.waiting, initArrived)
 
-  if (init.arrived.size === total && init.inElevator.length === 0) {
-    // 全部已在起点且目的地就是起点（极少见）
+  if (initArrived.size === total && initBoard.inElevator.length === 0) {
     return { minStops: 0, solutions: [[]], hasReturn: false }
   }
 
   const start: SearchState = {
     floor: level.startFloor,
-    inElevatorKey: idsKey(init.inElevator),
-    waitingKey: waitingKey(init.waiting),
-    arrivedKey: [...init.arrived].sort().join(','),
+    inElevatorKey: idsKey(initBoard.inElevator),
+    waitingKey: waitingKey(initBoard.waiting),
+    arrivedKey: [...initArrived].sort().join(','),
+    waveIndex: initWaveIndex,
     stopsUsed: 0,
     path: [],
-    inElevator: init.inElevator,
-    waiting: init.waiting,
-    arrived: init.arrived,
+    inElevator: initBoard.inElevator,
+    waiting: initBoard.waiting,
+    arrived: initArrived,
   }
 
   const queue: SearchState[] = [start]
-  // 同一乘客分布 + 楼层只访问一次（与 stops 无关，因 BFS 先到更优）
   const visited = new Set<string>([
-    `${start.floor}|${start.inElevatorKey}|${start.waitingKey}|${start.arrivedKey}`,
+    `${start.floor}|${start.waveIndex}|${start.inElevatorKey}|${start.waitingKey}|${start.arrivedKey}`,
   ])
 
   let minStops = Infinity
@@ -179,13 +251,17 @@ export function solve(
     if (cur.stopsUsed >= minStops) continue
 
     for (const nextFloor of searchFloors) {
-      const applied = applyStop(
+      // 下客 → 波次推进 → 上客（与 simulate 一致）
+      const applied = applyFullStop(
         nextFloor,
         level.capacity,
         cur.inElevator,
         cur.waiting,
         cur.arrived,
+        waves,
+        cur.waveIndex,
       )
+
       const path = [...cur.path, nextFloor]
       const stopsUsed = cur.stopsUsed + 1
 
@@ -206,7 +282,7 @@ export function solve(
       const inKey = idsKey(applied.inElevator)
       const wKey = waitingKey(applied.waiting)
       const aKey = [...applied.arrived].sort().join(',')
-      const vKey = `${nextFloor}|${inKey}|${wKey}|${aKey}`
+      const vKey = `${nextFloor}|${applied.waveIndex}|${inKey}|${wKey}|${aKey}`
       if (visited.has(vKey)) continue
       visited.add(vKey)
 
@@ -215,6 +291,7 @@ export function solve(
         inElevatorKey: inKey,
         waitingKey: wKey,
         arrivedKey: aKey,
+        waveIndex: applied.waveIndex,
         stopsUsed,
         path,
         inElevator: applied.inElevator,
@@ -224,7 +301,6 @@ export function solve(
     }
   }
 
-  // 若没有任何「无折返」的最优解，则视为本关需要折返
   const hasReturn =
     solutions.length > 0 &&
     solutions.every((s) => hasDirectionChange(s, level.startFloor))

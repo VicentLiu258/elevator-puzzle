@@ -323,22 +323,62 @@
 /* 关卡选择 — 磨砂玻璃片 */
 .level-select {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
 }
 
+.level-select__chapter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.level-select__chapter-title {
+  font-size: 0.68rem;
+  color: rgba(60, 80, 100, 0.7);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  min-width: 52px;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.level-select__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .level-chip {
-  width: 28px;
-  height: 28px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 32px;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.7);
   color: var(--ink);
   font-weight: 650;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  line-height: 1;
   backdrop-filter: blur(8px);
   box-shadow: 0 2px 6px rgba(40, 60, 80, 0.08);
+  gap: 1px;
 }
+
+.level-chip__stars {
+  font-size: 0.48rem;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.level-chip--star3 .level-chip__stars { color: #d4a017; }
+.level-chip--star2 .level-chip__stars { color: #b0b0b0; }
+.level-chip--star1 .level-chip__stars { color: #c08050; }
 
 .level-chip--current {
   background: linear-gradient(160deg, #fff 0%, #e8eef3 100%);
@@ -1365,6 +1405,45 @@
   background: rgba(232, 248, 240, 0.92);
   border-color: rgba(47, 143, 107, 0.45);
   color: #1a5c42;
+}
+
+/* 星级显示 */
+.result-stars {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: 6px;
+}
+
+.result-star {
+  font-size: 1.3rem;
+  display: inline-block;
+  animation: star-pop 0.4s ease-out both;
+}
+
+.result-star--lit {
+  color: #d4a017;
+  text-shadow: 0 0 8px rgba(212, 160, 23, 0.5);
+}
+
+.result-star--dim {
+  color: rgba(180, 180, 180, 0.4);
+}
+
+@keyframes star-pop {
+  0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+  60% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.result__stats {
+  font-size: 0.82rem;
+  opacity: 0.8;
+}
+
+.result__hint {
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .result--fail {

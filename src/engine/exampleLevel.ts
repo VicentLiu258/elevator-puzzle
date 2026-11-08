@@ -11,6 +11,7 @@ export const EXAMPLE_LEVEL: LevelConfig = {
   capacity: 2,
   startFloor: 1,
   maxStops: 4,
+  optimalStops: 3,
   description:
     '规则：停靠才上下客；先下后上；满员按排队顺序上车；重复楼层各算一次停靠。',
   passengers: [

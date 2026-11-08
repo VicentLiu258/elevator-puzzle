@@ -17,13 +17,25 @@ export interface LevelConfig {
   name: string
   /** 电梯容量 */
   capacity: number
-  /** 电梯起始楼层（首版全部为 1） */
+  /** 电梯起始楼层 */
   startFloor: number
   /** 停靠上限（玩家指令长度上限） */
   maxStops: number
+  /** 最优解停靠次数（solver 计算，用于星级评定） */
+  optimalStops: number
   passengers: Passenger[]
   /** 关卡说明，写明本关规则要点 */
   description?: string
+  /** 关卡所属章节 1-4 */
+  chapter?: 1 | 2 | 3 | 4
+  /**
+   * 多波次乘客：waves[0] 为初始乘客（同 passengers），
+   * waves[N] 在前 N 波全部送达后出现在各自起点楼层。
+   * 若未设置，视为单波次。
+   */
+  waves?: Passenger[][]
+  /** 波次触发说明（UI 展示用） */
+  waveHint?: string
 }
 
 export interface StepEvent {

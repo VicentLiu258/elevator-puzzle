@@ -3,7 +3,7 @@ import { ALL_PLAYABLE_LEVELS, LEVELS, getLevel } from '../data/levels'
 import { TOTAL_FLOORS } from '../engine/types'
 import type { Passenger } from '../engine/types'
 import { usePlayback } from '../hooks/usePlayback'
-import { useProgress } from '../hooks/useProgress'
+import { computeStars, useProgress } from '../hooks/useProgress'
 import { Building } from './Building'
 import { CommandSlots } from './CommandSlots'
 import { EventLog } from './EventLog'
@@ -30,7 +30,7 @@ function buildInitialWaiting(passengers: Passenger[]): Map<number, Passenger[]> 
 export function Game() {
   const [levelId, setLevelId] = useState(1)
   const level = getLevel(levelId) ?? LEVELS[0]!
-  const { markCleared, isCleared, isUnlocked } = useProgress()
+  const { markCleared, isCleared, isUnlocked, markStars, getBestStars } = useProgress()
   const playback = usePlayback(level)
 
   // 示例与求助弹窗状态
@@ -75,11 +75,18 @@ export function Game() {
     return () => window.clearTimeout(t)
   }, [alightedKey])
 
+  const finishedStars = useMemo(() => {
+    if (playback.mode !== 'finished' || !playback.result?.success) return undefined
+    const stopsUsed = playback.commands.length
+    return computeStars(stopsUsed, level.optimalStops)
+  }, [playback.mode, playback.result?.success, playback.commands.length, level.optimalStops])
+
   useEffect(() => {
     if (playback.mode === 'finished' && playback.result?.success) {
       markCleared(level.id)
+      if (finishedStars) markStars(level.id, finishedStars)
     }
-  }, [playback.mode, playback.result?.success, level.id, markCleared])
+  }, [playback.mode, playback.result?.success, level.id, markCleared, markStars, finishedStars])
 
   // 示例演练：等关卡切换完成后再填入指令，避免闭包用到旧关卡
   useEffect(() => {
@@ -162,6 +169,9 @@ export function Game() {
             success={playback.result.success}
             failureInfo={playback.result.failureInfo}
             onOpenHelp={() => setShowHelp(true)}
+            stars={finishedStars}
+            stopsUsed={playback.commands.length}
+            optimalStops={level.optimalStops}
           />
         </div>
       )}
@@ -214,6 +224,8 @@ export function Game() {
             </strong>
             <span>
               容量 {level.capacity} · ≤{level.maxStops} 停
+              {level.optimalStops < level.maxStops && ` · ★★★=${level.optimalStops}停`}
+              {level.waves && level.waves.length > 1 && ` · ${level.waves.length}波次`}
             </span>
           </div>
         </div>
@@ -223,6 +235,7 @@ export function Game() {
           currentId={level.id}
           isCleared={isCleared}
           isUnlocked={isUnlocked}
+          getBestStars={getBestStars}
           onSelect={goToLevel}
         />
         <EventLog text={playback.currentStep?.event.description ?? ''} />
